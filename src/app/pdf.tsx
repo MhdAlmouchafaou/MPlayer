@@ -14,6 +14,7 @@ import { haptic, IconButton } from '../components/ui';
 import { useMedia } from '../store/media';
 import { toast, useUI } from '../store/ui';
 import { useTheme } from '../theme';
+import { isVaultUri, useVault } from '../store/vault';
 
 const GAP = 10;
 const NO_PAGES: number[] = [];
@@ -80,12 +81,18 @@ export default function PdfReader() {
       .then((i) => {
         if (!alive) return;
         setInfo(i);
-        useMedia.getState().touchDoc({ uri, name: params.name ?? name, page: 0, pages: i.pageCount });
+        if (!isVaultUri(uri)) useMedia.getState().touchDoc({ uri, name: params.name ?? name, page: 0, pages: i.pageCount });
       })
       .catch((e) => alive && setError(String(e?.message ?? e).replace(/^.*Exception: /, '')));
     if (settings.keepAwake) Native.setKeepAwake(true);
+    const secret = isVaultUri(uri);
+    if (secret) Native.setSecure(true);
     return () => {
       alive = false;
+      if (secret) {
+        Native!.setSecure(false);
+        useVault.setState({ openMedia: false });
+      }
       Native!.pdfClose(uri);
       Native!.setKeepAwake(false);
     };
@@ -141,7 +148,7 @@ export default function PdfReader() {
   }).current;
 
   useEffect(() => {
-    if (info) useMedia.getState().setDocPage(uri, page, info.pageCount);
+    if (info && !isVaultUri(uri)) useMedia.getState().setDocPage(uri, page, info.pageCount);
   }, [page, info, uri]);
 
   // --- zoom (vertical mode) ---

@@ -263,7 +263,7 @@ export const useVideo = create<VideoSession>((set, get) => ({
   saveProgress: () => {
     const { items, index, position, duration, active } = get();
     const item = items[index];
-    if (!active || !item || duration <= 0) return;
+    if (!active || !item || duration <= 0 || item.key.startsWith('vault:')) return;
     lastSave = Date.now();
     useMedia.getState().setProgress(item.key, position, duration);
   },

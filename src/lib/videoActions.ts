@@ -6,6 +6,7 @@ import { useVideo, type VItem } from '../store/video';
 import { useVideos, type Video } from '../store/videos';
 import { displayFolder, formatSize, formatTime } from '../utils';
 import { qualityLabel } from '../components/video/VideoItems';
+import { moveToVault } from './vaultActions';
 
 export const toVItem = (v: Video): VItem => ({
   key: v.key,
@@ -90,6 +91,7 @@ export function openVideoMenu(v: Video, list?: Video[]) {
       },
       { label: 'Ouvrir le dossier', icon: 'folder', onPress: () => router.push({ pathname: '/videos/[folder]', params: { folder: v.folder } }) },
       { label: 'Partager', icon: 'share', onPress: () => Native?.shareFile(v.uri, v.mimeType || 'video/*', v.title) },
+      { label: 'Déplacer dans le dossier privé', icon: 'lock', onPress: () => moveToVault([v.uri], `« ${v.title} »`) },
       ...(hasProgress
         ? [{ label: "Effacer de l'historique", icon: 'history', onPress: () => useMedia.getState().clearProgress(v.key) }]
         : []),

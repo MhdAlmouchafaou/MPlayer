@@ -28,6 +28,7 @@ import { useMedia, type VideoSettings } from '../store/media';
 import { toast, useUI } from '../store/ui';
 import { fmt, useVideo } from '../store/video';
 import { uid } from '../utils';
+import { isVaultUri, useVault } from '../store/vault';
 
 const RESIZE: { key: VideoSettings['resizeMode']; label: string }[] = [
   { key: 'fit', label: 'Ajuster' },
@@ -218,6 +219,17 @@ export default function VideoPlayerScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Private videos: no screenshots, no preview in recent apps.
+  const secret = isVaultUri(item?.uri);
+  useEffect(() => {
+    if (!secret) return;
+    Native?.setSecure(true);
+    return () => {
+      Native?.setSecure(false);
+      useVault.setState({ openMedia: false });
+    };
+  }, [secret]);
+
   // Auto-rotate: the screen follows how the phone is held. Off: stays as it is.
   useEffect(() => {
     if (!Native) return;
@@ -226,8 +238,8 @@ export default function VideoPlayerScreen() {
 
   // Auto picture-in-picture when leaving the app while playing (Android 12+).
   useEffect(() => {
-    Native?.setAutoPip(settings.autoPip && isPlaying, videoW || 16, videoH || 9);
-  }, [settings.autoPip, isPlaying, videoW, videoH]);
+    Native?.setAutoPip(settings.autoPip && isPlaying && !isVaultUri(item?.uri), videoW || 16, videoH || 9);
+  }, [settings.autoPip, isPlaying, videoW, videoH, item?.uri]);
 
   // PiP detection: the window shrinks to a small size (checked again once settled).
   const smallWindow = W < 420 && H < 420;

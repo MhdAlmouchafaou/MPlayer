@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { moveToVault } from './vaultActions';
 import { Native } from '../../modules/mplayer-core';
 import { useLibrary, type Track } from '../store/library';
 import { usePlayer } from '../store/player';
@@ -113,7 +114,8 @@ export function trackActions(track: Track, ctx: Ctx = {}): SheetAction[] {
       icon: 'share',
       onPress: () => Native?.shareTrack(track.uri, track.title).catch(() => toast('Partage impossible')),
     },
-    { label: 'Détails', icon: 'info', onPress: () => setTimeout(() => showTrackDetails(track), 220) }
+    { label: 'Détails', icon: 'info', onPress: () => setTimeout(() => showTrackDetails(track), 220) },
+    { label: 'Déplacer dans le dossier privé', icon: 'lock', onPress: () => moveToVault([track.uri], `« ${track.title} »`) }
   );
   return actions;
 }

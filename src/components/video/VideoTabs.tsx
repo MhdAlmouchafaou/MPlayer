@@ -46,7 +46,7 @@ function ContinueRow() {
   return (
     <View style={{ paddingTop: 16 }}>
       <Text style={[styles.section, { color: t.text }]}>Reprendre la lecture</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
+      <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
         {items.map((v, i) => (
           <Pressable key={v.key} onPress={() => playVideos(items, i)} onLongPress={() => openVideoMenu(v, items)} style={{ width: 210 }}>
             <VideoThumb video={v} width={210} height={118} radius={18} />

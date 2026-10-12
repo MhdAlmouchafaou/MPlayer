@@ -116,7 +116,7 @@ export function PlaylistsTab() {
 
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + MINI_SPACE, paddingTop: 22 }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18, gap: 16 }}>
+      <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18, gap: 16 }}>
         {smart.map((s) => (
           <PlaylistCard
             key={s.id}

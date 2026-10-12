@@ -13,6 +13,7 @@ import { useLibrary } from '../store/library';
 import { applyNativeSettings, attachPlayerEvents, restoreSession } from '../store/player';
 import { useUserStore } from '../store/user';
 import { VideoMini } from '../components/video/VideoMini';
+import { VaultGuard } from '../components/vault/VaultGuard';
 import { requestMedia } from '../lib/permissions';
 import { useDocs } from '../store/docs';
 import { useMedia } from '../store/media';
@@ -117,8 +118,11 @@ export default function RootLayout() {
                 <Stack.Screen name="video" options={{ animation: 'fade', gestureEnabled: false, contentStyle: { backgroundColor: '#000' } }} />
                 <Stack.Screen name="open" options={{ animation: 'none', contentStyle: { backgroundColor: '#000' } }} />
                 <Stack.Screen name="pdf" options={{ animation: 'slide_from_bottom' }} />
+                <Stack.Screen name="vault" options={{ animation: 'fade_from_bottom' }} />
+                <Stack.Screen name="vault-image" options={{ animation: 'fade', contentStyle: { backgroundColor: '#000' } }} />
               </Stack>
               <VideoMini />
+              <VaultGuard />
               <PlayerSheet />
               <Overlays />
             </>

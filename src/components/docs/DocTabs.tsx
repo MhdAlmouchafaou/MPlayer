@@ -7,6 +7,7 @@ import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Native } from '../../../modules/mplayer-core';
 import { useDocs } from '../../store/docs';
+import { moveToVault } from '../../lib/vaultActions';
 import { useMedia } from '../../store/media';
 import { toast, useUI } from '../../store/ui';
 import { useTheme } from '../../theme';
@@ -67,6 +68,7 @@ function docMenu(d: DocEntry) {
         onPress: () => toast(useMedia.getState().toggleDocFavorite(d.uri) ? 'Ajouté aux favoris' : 'Retiré des favoris'),
       },
       { label: 'Partager', icon: 'share', onPress: () => Native?.shareFile(d.uri, 'application/pdf', d.name) },
+      { label: 'Déplacer dans le dossier privé', icon: 'lock', onPress: () => moveToVault([d.uri], `« ${d.name} »`) },
       ...(m.docRecents.some((r) => r.uri === d.uri)
         ? [{ label: 'Retirer des récents', icon: 'history', onPress: () => useMedia.getState().removeDocRecent(d.uri) }]
         : []),

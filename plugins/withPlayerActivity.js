@@ -31,6 +31,15 @@ module.exports = function withPlayerActivity(config) {
           data: MIME_TYPES.map((m) => ({ $: { 'android:scheme': scheme, 'android:mimeType': m } })),
         });
       }
+      // Mime-only filter (any scheme the system allows) and the camera/gallery "review" action.
+      for (const action of ['android.intent.action.VIEW', 'com.android.camera.action.REVIEW']) {
+        activity['intent-filter'].push({
+          $: { 'android:label': marker },
+          action: [{ $: { 'android:name': action } }],
+          category: [{ $: { 'android:name': 'android.intent.category.DEFAULT' } }],
+          data: ['video/*', 'audio/*', 'application/pdf'].map((m) => ({ $: { 'android:mimeType': m } })),
+        });
+      }
       // Streams opened from a browser or another app.
       activity['intent-filter'].push({
         $: { 'android:label': marker },

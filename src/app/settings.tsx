@@ -66,6 +66,24 @@ export function SettingsContent({ bottomPad, header }: { bottomPad: number; head
         <SectionLabel>Vidéo</SectionLabel>
         <Card>
           <SettingItem
+            title="Lecteur vidéo par défaut"
+            sub="Ouvrir les vidéos de la galerie et des autres applications avec MPlayer"
+            onPress={() =>
+              useUI.getState().showConfirm({
+                title: 'Faire de MPlayer le lecteur par défaut',
+                message:
+                  'Une vidéo va s’ouvrir : choisissez « MPlayer » puis « Toujours ». Si une autre application s’ouvre directement, réinitialisez son choix par défaut dans les paramètres Android (Applications › application concernée › Ouvrir par défaut), puis réessayez.',
+                confirmLabel: 'Continuer',
+                onConfirm: async () => {
+                  const v = useVideos.getState().videos[0];
+                  if (!v) return Native?.openDefaultAppsSettings();
+                  const ok = await Native?.openWithSystem(v.uri, 'video/*');
+                  if (!ok) Native?.openDefaultAppsSettings();
+                },
+              })
+            }
+          />
+          <SettingItem
             title="Décodeur"
             value={{ auto: 'Automatique (recommandé)', exo: 'Matériel uniquement', vlc: 'Logiciel uniquement' }[video.engine]}
             sub="En automatique, MPlayer bascule seul sur le décodeur logiciel quand le téléphone ne sait pas lire un fichier."
