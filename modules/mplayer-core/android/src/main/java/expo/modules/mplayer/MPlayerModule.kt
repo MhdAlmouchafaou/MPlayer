@@ -404,6 +404,8 @@ class MPlayerModule : Module() {
         listenerAttached = false
         controllerFuture?.let { MediaController.releaseFuture(it) }
         controllerFuture = null
+        VlcEngine.emit = null
+        VlcEngine.release()
       }
     }
 

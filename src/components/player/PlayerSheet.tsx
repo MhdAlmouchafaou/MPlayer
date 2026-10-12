@@ -1,3 +1,4 @@
+import { usePathname } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { BackHandler, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -133,7 +134,8 @@ export function PlayerSheet() {
     transform: [{ translateY: -progress.value * 120 }],
   }));
 
-  const visible = !!track;
+  const pathname = usePathname();
+  const visible = !!track && pathname !== '/video' && pathname !== '/pdf' && pathname !== '/open';
 
   return (
     <>

@@ -132,8 +132,8 @@ object VlcEngine {
     val p = player ?: return
     try {
       when (scale) {
-        "fill" -> { p.setAspectRatio(null); p.setVideoScale(MediaPlayer.ScaleType.SURFACE_FILL) }
-        "zoom" -> { p.setAspectRatio(null); p.setVideoScale(MediaPlayer.ScaleType.SURFACE_FIT_SCREEN) }
+        "fill" -> { p.setAspectRatio(null); p.setVideoScale(MediaPlayer.ScaleType.SURFACE_FIT_SCREEN) }
+        "stretch" -> { p.setAspectRatio(null); p.setVideoScale(MediaPlayer.ScaleType.SURFACE_FILL) }
         "16:9" -> { p.setVideoScale(MediaPlayer.ScaleType.SURFACE_BEST_FIT); p.setAspectRatio("16:9") }
         "4:3" -> { p.setVideoScale(MediaPlayer.ScaleType.SURFACE_BEST_FIT); p.setAspectRatio("4:3") }
         else -> { p.setAspectRatio(null); p.setVideoScale(MediaPlayer.ScaleType.SURFACE_BEST_FIT) }

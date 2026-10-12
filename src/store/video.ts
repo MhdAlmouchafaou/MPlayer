@@ -144,7 +144,7 @@ export const useVideo = create<VideoSession>((set, get) => ({
         await Native.setRepeatMode(get().repeatOne ? 1 : 0);
         await Native.setSpeed(get().speed);
       } else {
-        await Native.pause().catch(() => {});
+        await Native.stop().catch(() => {});
         await Native.vlcOpen(item.uri, startMs, true);
         await Native.vlcSetRate(get().speed);
       }
@@ -177,6 +177,10 @@ export const useVideo = create<VideoSession>((set, get) => ({
   seek: (ms, fast = false) => {
     const d = get().duration;
     const target = Math.max(0, d > 0 ? Math.min(ms, d - 50) : ms);
+    if (get().engine === 'vlc' && get().ended) {
+      get().open(get().items, get().index, { startMs: target, engine: 'vlc' });
+      return;
+    }
     set({ position: target, ended: false });
     if (get().engine === 'exo') Native?.seekTo(target);
     else Native?.vlcSeek(target, fast);
@@ -292,7 +296,7 @@ function onEnded() {
     useVideo.setState({ sleepEnd: false, isPlaying: false, ended: true });
     return;
   }
-  if (s.repeatOne) return s.seek(0);
+  if (s.repeatOne) return s.engine === 'vlc' ? void s.open(s.items, s.index, { startMs: 0, engine: 'vlc' }) : s.seek(0);
   const auto = useMedia.getState().video.autoNext;
   if (auto && s.index + 1 < s.items.length) s.open(s.items, s.index + 1, { startMs: 0 });
   else useVideo.setState({ isPlaying: false, ended: true });

@@ -176,6 +176,7 @@ export default function VideoPlayerScreen() {
   const brightness = useRef(0.5);
   const volume = useRef({ level: 0.5, max: 15, step: -1, boost: 0 });
   const rootRef = useRef<View>(null);
+  const syncLevelsRef = useRef<() => void>(() => {});
   const thumb = useVideoThumb(item?.id ?? item?.uri, 320);
 
   // --- zoom / pan of the picture (UI thread) ---
@@ -199,9 +200,11 @@ export default function VideoPlayerScreen() {
         brightness.current = settings.brightness;
         Native!.setBrightness(settings.brightness);
       }
+      syncLevelsRef.current();
     });
     Native.getSystemVolume().then((v) => {
       volume.current = { level: v.current / Math.max(1, v.max), max: v.max, step: v.current, boost: 0 };
+      syncLevelsRef.current();
     });
     return () => {
       Native!.setImmersive(false);
@@ -471,6 +474,7 @@ export default function VideoPlayerScreen() {
     brightRef.value = brightness.current;
     volRef.value = volume.current.level;
   }, [brightRef, volRef]);
+  syncLevelsRef.current = syncLevels;
 
   const pan = Gesture.Pan()
     .enabled(gesturesOn)
@@ -509,7 +513,8 @@ export default function VideoPlayerScreen() {
         while (m < 3 && dy >= [70, 150, 230][m]) m++;
         const factor = [1, 0.5, 0.25, 0.06][m];
         const base = Math.max(25, Math.min(1200, durationSV.value / (W * 1.1)));
-        scrubPos.value = scrubPos.value + (e.translationX - lastX.value) * base * factor;
+        const maxPos = durationSV.value > 0 ? durationSV.value : 1e12;
+        scrubPos.value = Math.max(0, Math.min(maxPos, scrubPos.value + (e.translationX - lastX.value) * base * factor));
         lastX.value = e.translationX;
         scheduleOnRN(onScrubMove, scrubPos.value, m);
         return;
@@ -543,8 +548,8 @@ export default function VideoPlayerScreen() {
     .onUpdate((e) => {
       scheduleOnRN(onHoldMove, e.translationY);
     })
-    .onFinalize((_e, success) => {
-      if (success) scheduleOnRN(onHoldEnd);
+    .onFinalize(() => {
+      scheduleOnRN(onHoldEnd);
     });
 
   const pinch = Gesture.Pinch()

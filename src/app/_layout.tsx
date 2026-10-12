@@ -12,16 +12,27 @@ import { PlayerSheet } from '../components/player/PlayerSheet';
 import { useLibrary } from '../store/library';
 import { applyNativeSettings, attachPlayerEvents, restoreSession } from '../store/player';
 import { useUserStore } from '../store/user';
+import { VideoMini } from '../components/video/VideoMini';
+import { requestMedia } from '../lib/permissions';
+import { useDocs } from '../store/docs';
+import { useMedia } from '../store/media';
+import { attachVideoEvents } from '../store/video';
+import { useVideos } from '../store/videos';
 import { useTheme } from '../theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function useHydrated() {
-  const [hydrated, setHydrated] = useState(useUserStore.persist.hasHydrated());
+  const both = () => useUserStore.persist.hasHydrated() && useMedia.persist.hasHydrated();
+  const [hydrated, setHydrated] = useState(both());
   useEffect(() => {
-    const unsub = useUserStore.persist.onFinishHydration(() => setHydrated(true));
-    setHydrated(useUserStore.persist.hasHydrated());
-    return unsub;
+    const a = useUserStore.persist.onFinishHydration(() => setHydrated(both()));
+    const b = useMedia.persist.onFinishHydration(() => setHydrated(both()));
+    setHydrated(both());
+    return () => {
+      a();
+      b();
+    };
   }, []);
   return hydrated;
 }
@@ -32,14 +43,26 @@ function Bootstrap() {
   const loaded = useLibrary((s) => s.loaded);
 
   useEffect(() => attachPlayerEvents(), []);
+  useEffect(() => attachVideoEvents(), []);
 
   useEffect(() => {
     if (!hydrated) return;
     (async () => {
-      const state = await useLibrary.getState().checkPermission();
-      if (state === 'granted') await useLibrary.getState().scan();
+      const [audio, video] = await Promise.all([useLibrary.getState().checkPermission(), useVideos.getState().checkPermission()]);
+      // First launch: ask once for everything.
+      if (audio !== 'granted' && video !== 'granted' && !useUserStore.getState().onboarded) {
+        SplashScreen.hideAsync().catch(() => {});
+        useUserStore.getState().setOnboarded();
+        await requestMedia().catch(() => null);
+        await Promise.all([useLibrary.getState().checkPermission(), useVideos.getState().checkPermission()]);
+      }
+      const jobs: Promise<void>[] = [];
+      if (useVideos.getState().permission === 'granted') jobs.push(useVideos.getState().scan());
+      if (useLibrary.getState().permission === 'granted') jobs.push(useLibrary.getState().scan());
+      await Promise.all(jobs);
       SplashScreen.hideAsync().catch(() => {});
       await applyNativeSettings();
+      if (useMedia.getState().section === 'docs') useDocs.getState().scan();
     })();
   }, [hydrated]);
 
@@ -52,11 +75,11 @@ function Bootstrap() {
     let last = Date.now();
     const sub = AppState.addEventListener('change', (s) => {
       if (s === 'active') {
-        useLibrary.getState().checkPermission().then((p) => {
-          if (p === 'granted' && Date.now() - last > 30000) {
-            last = Date.now();
-            useLibrary.getState().scan();
-          }
+        Promise.all([useLibrary.getState().checkPermission(), useVideos.getState().checkPermission()]).then(([a, v]) => {
+          if (Date.now() - last < 30000) return;
+          last = Date.now();
+          if (a === 'granted') useLibrary.getState().scan();
+          if (v === 'granted') useVideos.getState().scan();
         });
       }
     });
@@ -88,7 +111,12 @@ export default function RootLayout() {
                   animation: 'slide_from_right',
                   contentStyle: { backgroundColor: t.bg },
                 }}
-              />
+              >
+                <Stack.Screen name="video" options={{ animation: 'fade', gestureEnabled: false, contentStyle: { backgroundColor: '#000' } }} />
+                <Stack.Screen name="open" options={{ animation: 'none', contentStyle: { backgroundColor: '#000' } }} />
+                <Stack.Screen name="pdf" options={{ animation: 'slide_from_bottom' }} />
+              </Stack>
+              <VideoMini />
               <PlayerSheet />
               <Overlays />
             </>

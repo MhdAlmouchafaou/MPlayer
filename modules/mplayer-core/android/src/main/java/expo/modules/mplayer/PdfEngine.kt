@@ -72,10 +72,8 @@ object PdfEngine {
    * Renders one page at [width] pixels. [mode]: 0 normal, 1 night (inverted, warm), 2 sepia.
    */
   fun render(context: Context, uriString: String, index: Int, width: Int, mode: Int): String? {
-    val doc = synchronized(this) { docs[uriString] } ?: run {
-      open(context, uriString)
-      synchronized(this) { docs[uriString] }
-    } ?: return null
+    // Closed documents are not reopened: late renders after the reader closed just stop.
+    val doc = synchronized(this) { docs[uriString] } ?: return null
     val dir = File(context.cacheDir, "mplayer-pdf/${doc.key}").apply { mkdirs() }
     val w = width.coerceIn(200, 4096)
     val target = File(dir, "p${index}_${w}_$mode.png")
@@ -86,8 +84,15 @@ object PdfEngine {
       if (index < 0 || index >= doc.renderer.pageCount) return null
       val page = doc.renderer.openPage(index)
       try {
-        val h = (w.toFloat() * page.height / page.width).toInt().coerceAtLeast(1)
-        val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        // Cap the bitmap at ~16 MP so very tall pages cannot exhaust memory.
+        var rw = w
+        var h = (rw.toFloat() * page.height / page.width).toInt().coerceAtLeast(1)
+        if (rw.toLong() * h > 16_000_000L) {
+          val k = Math.sqrt(16_000_000.0 / (rw.toDouble() * h))
+          rw = (rw * k).toInt().coerceAtLeast(1)
+          h = (h * k).toInt().coerceAtLeast(1)
+        }
+        val b = Bitmap.createBitmap(rw, h, Bitmap.Config.ARGB_8888)
         b.eraseColor(Color.WHITE)
         page.render(b, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
         rendered = b

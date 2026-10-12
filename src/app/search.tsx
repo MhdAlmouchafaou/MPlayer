@@ -10,6 +10,12 @@ import { openCollection, openTrackMenu } from '../lib/actions';
 import { useLibrary, type Album, type Artist, type Folder, type Track } from '../store/library';
 import { usePlayer } from '../store/player';
 import { useTheme } from '../theme';
+import type { NativeDoc } from '../../modules/mplayer-core';
+import { openDoc } from '../components/docs/DocTabs';
+import { VideoRow } from '../components/video/VideoItems';
+import { openVideoMenu, playVideos } from '../lib/videoActions';
+import { useDocs } from '../store/docs';
+import { useVideos, type Video } from '../store/videos';
 import { plural } from '../utils';
 
 const norm = (s: string) => {
@@ -23,6 +29,8 @@ const norm = (s: string) => {
 };
 
 type Row =
+  | { kind: 'video'; video: Video; index: number }
+  | { kind: 'doc'; doc: NativeDoc }
   | { kind: 'track'; track: Track; index: number }
   | { kind: 'album'; album: Album }
   | { kind: 'artist'; artist: Artist }
@@ -38,28 +46,35 @@ export default function SearchScreen() {
   const artists = useLibrary((s) => s.artists);
   const folders = useLibrary((s) => s.folders);
   const currentId = usePlayer((s) => s.queue[s.index]);
+  const videos = useVideos((s) => s.videos);
+  const docs = useDocs((s) => s.docs);
   const playTracks = usePlayer((s) => s.playTracks);
 
   const results = useMemo(() => {
     const term = norm(q.trim());
-    if (!term) return { sections: [] as { title: string; data: Row[] }[], trackList: [] as Track[] };
+    if (!term) return { sections: [] as { title: string; data: Row[] }[], trackList: [] as Track[], videoList: [] as Video[] };
     const words = term.split(/\s+/);
     const match = (...fields: string[]) => {
       const hay = norm(fields.join(' '));
       return words.every((w) => hay.includes(w));
     };
     const trackList = tracks.filter((x) => match(x.title, x.artist, x.album, x.fileName)).slice(0, 200);
+    const videoList = videos.filter((v) => match(v.title, v.fileName, v.folder)).slice(0, 100);
+    const docList = docs.filter((d) => match(d.name, d.folder)).slice(0, 60);
     const albumList = albums.filter((a) => match(a.name, a.artist)).slice(0, 20);
     const artistList = artists.filter((a) => match(a.name)).slice(0, 20);
     const folderList = folders.filter((f) => match(f.name, f.display)).slice(0, 20);
     const sections: { title: string; data: Row[] }[] = [];
+    if (videoList.length)
+      sections.push({ title: `Vidéos (${videoList.length})`, data: videoList.map((video, index) => ({ kind: 'video', video, index })) });
     if (trackList.length)
       sections.push({ title: `Pistes (${trackList.length})`, data: trackList.map((track, index) => ({ kind: 'track', track, index })) });
     if (artistList.length) sections.push({ title: 'Artistes', data: artistList.map((artist) => ({ kind: 'artist', artist })) });
     if (albumList.length) sections.push({ title: 'Albums', data: albumList.map((album) => ({ kind: 'album', album })) });
     if (folderList.length) sections.push({ title: 'Dossiers', data: folderList.map((folder) => ({ kind: 'folder', folder })) });
-    return { sections, trackList };
-  }, [q, tracks, albums, artists, folders]);
+    if (docList.length) sections.push({ title: `Documents (${docList.length})`, data: docList.map((doc) => ({ kind: 'doc', doc })) });
+    return { sections, trackList, videoList };
+  }, [q, tracks, albums, artists, folders, videos, docs]);
 
   return (
     <View style={[styles.root, { backgroundColor: t.surface, paddingTop: insets.top }]}>
@@ -86,11 +101,22 @@ export default function SearchScreen() {
         stickySectionHeadersEnabled={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + MINI_SPACE }}
         keyExtractor={(row) =>
-          row.kind === 'track' ? `t${row.track.id}` : row.kind === 'album' ? `a${row.album.id}` : row.kind === 'artist' ? `r${row.artist.id}` : `f${row.folder.path}`
+          row.kind === 'video' ? `v${row.video.key}` : row.kind === 'doc' ? `d${row.doc.uri}` : row.kind === 'track' ? `t${row.track.id}` : row.kind === 'album' ? `a${row.album.id}` : row.kind === 'artist' ? `r${row.artist.id}` : `f${row.folder.path}`
         }
         renderSectionHeader={({ section }) => <Text style={[styles.section, { color: t.tabInactive }]}>{section.title}</Text>}
         renderItem={({ item }) => {
           switch (item.kind) {
+            case 'video':
+              return <VideoRow video={item.video} index={item.index} onPress={(i) => playVideos(results.videoList, i)} onMore={(v) => openVideoMenu(v, results.videoList)} />;
+            case 'doc':
+              return (
+                <CollectionRow
+                  title={item.doc.name.replace(/\.pdf$/i, '')}
+                  subtitle={item.doc.folder}
+                  icon="doc"
+                  onPress={() => openDoc({ uri: item.doc.uri, name: item.doc.name, size: item.doc.size })}
+                />
+              );
             case 'track':
               return (
                 <TrackRow
@@ -137,7 +163,7 @@ export default function SearchScreen() {
         }}
         ListEmptyComponent={
           <Text style={[styles.empty, { color: t.textSecondary }]}>
-            {q.trim() ? 'Aucun résultat' : 'Titres, artistes, albums ou dossiers'}
+            {q.trim() ? 'Aucun résultat' : 'Vidéos, musique, artistes, albums, dossiers ou PDF'}
           </Text>
         }
       />

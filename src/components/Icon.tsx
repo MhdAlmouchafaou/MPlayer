@@ -395,8 +395,9 @@ function IconImpl({ name, size = 24, color = '#000', strokeWidth = 1.7 }: Props)
     case 'rotate':
       body = (
         <>
-          <Rect {...s} x={8} y={3.5} width={8} height={14} rx={2} transform="rotate(-35 12 12)" />
-          <Path {...s} d="M3.6 13.5a8.5 8.5 0 004.9 6.3M20.4 10.5a8.5 8.5 0 00-4.9-6.3M15.6 3.1l.1 2.5-2.4.5M8.4 20.9l-.1-2.5 2.4-.5" />
+          <Rect {...s} x={4.5} y={3.5} width={9} height={15} rx={2.2} />
+          <Path {...s} d="M17 8.5c2.2 1.2 3.4 3.4 3.1 5.9-.3 2.4-2 4.3-4.3 5" />
+          <Path {...s} d="M15.6 21.2l.4-2-1.9-.8" />
         </>
       );
       break;
@@ -444,8 +445,8 @@ function IconImpl({ name, size = 24, color = '#000', strokeWidth = 1.7 }: Props)
     case 'loop':
       body = (
         <>
-          <Path {...s} d="M17 8.5H8a4.5 4.5 0 000 9h1M7 15.5h9a4.5 4.5 0 000-9h-1" />
-          <Path {...s} strokeWidth={strokeWidth * 0.85} d="M9.2 13.5l1.4-4 1.4 4M9.7 12.2h1.8M13.6 9.5v4h1.3a1 1 0 000-2h-1.3 1.1a1 1 0 000-2z" />
+          <Path {...s} d="M5.5 6v12M18.5 6v12" />
+          <Path {...s} d="M8.5 12h7M13 9.5l2.5 2.5-2.5 2.5" />
         </>
       );
       break;
