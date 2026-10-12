@@ -1,0 +1,104 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      MPLAYER_KEY_ALIAS: ${{ secrets.MPLAYER_KEY_ALIAS || 'mplayer' }}
+      MPLAYER_KEYSTORE_PASSWORD: ${{ secrets.MPLAYER_KEYSTORE_PASSWORD || 'mplayer-store-2026' }}
+      MPLAYER_KEY_PASSWORD: ${{ secrets.MPLAYER_KEY_PASSWORD || 'mplayer-store-2026' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: |
+          set -o pipefail
+          npx tsc --noEmit 2>&1 | tee "$RUNNER_TEMP/tsc.log"
+
+      - name: Prepare signing key
+        run: |
+          if [ -n "${{ secrets.MPLAYER_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.MPLAYER_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+          else
+            cp credentials/mplayer-release.jks "$RUNNER_TEMP/release.jks"
+          fi
+          echo "MPLAYER_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Set build number
+        run: node -e "const f='app.json';const a=require('./'+f);a.expo.android.versionCode=Number(process.env.GITHUB_RUN_NUMBER);require('fs').writeFileSync(f,JSON.stringify(a,null,2))"
+
+      - name: Generate native project
+        run: |
+          set -o pipefail
+          npx expo prebuild --platform android --no-install 2>&1 | tee "$RUNNER_TEMP/prebuild.log"
+        env:
+          CI: 1
+
+      - name: Build release APK
+        working-directory: android
+        run: |
+          set -o pipefail
+          ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a 2>&1 | tee "$RUNNER_TEMP/gradle.log"
+        env:
+          NODE_ENV: production
+
+      - name: Name the APK
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          cp android/app/build/outputs/apk/release/app-release.apk "MPlayer-$VERSION-build$GITHUB_RUN_NUMBER.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MPlayer-apk
+          path: MPlayer-*.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}-build${{ github.run_number }}
+          name: MPlayer ${{ env.VERSION }} (build ${{ github.run_number }})
+          body: |
+            APK Android à installer directement sur le téléphone.
+            Commit : ${{ github.sha }}
+          files: MPlayer-*.apk
+          make_latest: true
+
+      # Logs are pushed to the ci-logs branch so they can be read without the Actions UI.
+      - name: Publish failure log
+        if: failure()
+        run: |
+          mkdir -p /tmp/logs && cd /tmp/logs
+          { echo "run ${GITHUB_RUN_NUMBER} ${GITHUB_SHA}"; for f in "$RUNNER_TEMP"/*.log; do echo "=== $f"; grep -nE "^e: |error:|FAILURE|What went wrong|Unresolved|Exception|FAILED|ERROR" "$f" | head -250; echo "--- tail"; tail -60 "$f"; done; } > failure.txt
+          git init -q && git checkout -q -b ci-logs
+          git config user.name ci && git config user.email ci@users.noreply.github.com
+          git add failure.txt && git commit -q -m "log ${GITHUB_RUN_NUMBER}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-logs
