@@ -384,7 +384,7 @@ class MPlayerModule : Module() {
 
     Events(
       "onTrackChange", "onPlayingChange", "onProgress", "onQueueEnded", "onError", "onSleepTimerEnd",
-      "onBuffering", "onTracks", "onVideoSize", "onVlcState", "onVlcProgress", "onVlcError", "onPipChange", "onVaultProgress"
+      "onBuffering", "onTracks", "onVideoSize", "onVlcState", "onVlcProgress", "onVlcError", "onPipChange", "onVaultProgress", "onActivityStop", "onActivityStart"
     )
 
     OnCreate {
@@ -810,6 +810,7 @@ class MPlayerModule : Module() {
     }.runOnQueue(Queues.MAIN)
 
     AsyncFunction("setImmersive") { on: Boolean ->
+      watchLifecycle()
       val activity = appContext.currentActivity ?: return@AsyncFunction
       val window = activity.window
       val controller = WindowCompat.getInsetsController(window, window.decorView)
@@ -947,6 +948,23 @@ class MPlayerModule : Module() {
       Prop("subtitleStyle") { view: MPlayerVideoView, style: String? -> view.setSubtitleStyle(style ?: "shadow") }
       OnViewDestroys { view: MPlayerVideoView -> view.release() }
     }
+  }
+
+  private var lifecycleActivity: java.lang.ref.WeakReference<android.app.Activity>? = null
+
+  /** Reports activity stop/start, e.g. when the picture-in-picture window is dismissed. */
+  private fun watchLifecycle() {
+    val activity = appContext.currentActivity ?: return
+    if (lifecycleActivity?.get() === activity) return
+    val owner = activity as? androidx.lifecycle.LifecycleOwner ?: return
+    lifecycleActivity = java.lang.ref.WeakReference(activity)
+    owner.lifecycle.addObserver(androidx.lifecycle.LifecycleEventObserver { _, event ->
+      when (event) {
+        androidx.lifecycle.Lifecycle.Event.ON_STOP -> safeSend("onActivityStop", emptyMap())
+        androidx.lifecycle.Lifecycle.Event.ON_START -> safeSend("onActivityStart", emptyMap())
+        else -> {}
+      }
+    })
   }
 
   private fun pipParams(width: Int, height: Int, auto: Boolean): android.app.PictureInPictureParams {

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
@@ -10,7 +10,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { haptic, IconButton } from '../components/ui';
 import { PinPad } from '../components/vault/PinPad';
 import { useVideoThumb } from '../lib/thumbs';
-import { openVaultItem, pickIntoVault } from '../lib/vaultActions';
+import { allowLeaving, openVaultItem, pickIntoVault } from '../lib/vaultActions';
 import { toast, useUI } from '../store/ui';
 import { useVault } from '../store/vault';
 import { useTheme } from '../theme';
@@ -37,28 +37,37 @@ function Setup({ onDone }: { onDone: () => void }) {
   const [error, setError] = useState(0);
   const [accepted, setAccepted] = useState(false);
 
-  useEffect(() => {
-    if (value.length !== length) return;
+  const submitted = useRef(false);
+  // Driven by keypad input only (not by effects), so nothing can run twice.
+  const onInput = (v: string) => {
+    if (submitted.current) return;
+    setValue(v);
+    if (v.length !== length) return;
     if (step === 'enter') {
-      setFirst(value);
+      setFirst(v);
       setTimeout(() => {
         setValue('');
         setStep('confirm');
       }, 150);
-    } else if (step === 'confirm') {
-      if (value !== first) {
-        setError((e) => e + 1);
-        setTimeout(() => setValue(''), 300);
-        toast('Les codes ne correspondent pas');
-        return;
-      }
-      Native?.vaultSetPin(value).then((ok) => {
-        if (!ok) return toast('Impossible d’enregistrer le code');
-        toast('Dossier privé prêt');
-        onDone();
-      });
+      return;
     }
-  }, [value, length, step, first, onDone]);
+    if (v !== first) {
+      setError((e) => e + 1);
+      toast('Les codes ne correspondent pas');
+      setTimeout(() => setValue(''), 300);
+      return;
+    }
+    submitted.current = true;
+    Native?.vaultSetPin(v).then((ok) => {
+      if (!ok) {
+        submitted.current = false;
+        setValue('');
+        return toast('Impossible d’enregistrer le code');
+      }
+      toast('Dossier privé prêt');
+      onDone();
+    });
+  };
 
   if (step === 'intro') {
     return (
@@ -105,7 +114,7 @@ function Setup({ onDone }: { onDone: () => void }) {
       <Text style={[styles.p, { color: t.textSecondary, marginBottom: 30 }]}>
         {step === 'enter' ? 'Il vous sera demandé à chaque ouverture.' : 'Saisissez-le une seconde fois.'}
       </Text>
-      <PinPad length={length} value={value} onChange={setValue} error={error} />
+      <PinPad length={length} value={value} onChange={onInput} error={error} />
     </Animated.View>
   );
 }
@@ -125,23 +134,32 @@ function Unlock({ status, onUnlocked }: { status: Status; onUnlocked: () => void
     return () => clearInterval(timer);
   }, [lockedFor > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (value.length !== status.length || checking || !Native) return;
+  const busy = useRef(false);
+  // One verification per completed code, triggered by the keypad itself.
+  const onInput = (v: string) => {
+    if (busy.current || !Native) return;
+    setValue(v);
+    if (v.length !== status.length) return;
+    busy.current = true;
     setChecking(true);
-    Native.vaultVerify(value)
+    Native.vaultVerify(v)
       .then((r) => {
         if (r.ok) {
           haptic();
           onUnlocked();
-        } else {
-          setError((e) => e + 1);
-          setFails(r.failCount);
-          if (r.lockedForMs > 0) setLockedFor(r.lockedForMs);
-          setTimeout(() => setValue(''), 280);
+          return;
         }
+        setError((e) => e + 1);
+        setFails(r.failCount);
+        if (r.lockedForMs > 0) setLockedFor(r.lockedForMs);
+        setValue('');
       })
-      .finally(() => setChecking(false));
-  }, [value, status.length, checking, onUnlocked]);
+      .catch(() => setValue(''))
+      .finally(() => {
+        busy.current = false;
+        setChecking(false);
+      });
+  };
 
   const locked = lockedFor > 0;
   return (
@@ -156,7 +174,7 @@ function Unlock({ status, onUnlocked }: { status: Status; onUnlocked: () => void
             : 'Le dossier privé est verrouillé'}
       </Text>
       {checking ? <ActivityIndicator color={t.accent} style={{ position: 'absolute', top: 10, right: 10 }} /> : null}
-      <PinPad length={status.length} value={value} onChange={setValue} error={error} disabled={locked || checking} />
+      <PinPad length={status.length} value={value} onChange={onInput} error={error} disabled={locked || checking} />
     </View>
   );
 }
@@ -373,7 +391,13 @@ function Content() {
         <Animated.View entering={FadeInDown.duration(180)} style={[styles.actionBar, { bottom: insets.bottom + 16, backgroundColor: t.navBar }]}>
           <ActionBtn icon="close" label="Annuler" onPress={() => setSelected(new Set())} />
           {selected.size === 1 ? <ActionBtn icon="edit" label="Renommer" onPress={rename} /> : null}
-          <ActionBtn icon="share" label="Partager" onPress={() => { const it = items.find((i) => selected.has(i.id)); if (it) Native?.shareFile(it.uri, it.mime, it.name); }} />
+          <ActionBtn icon="share" label="Partager" onPress={() => {
+              const it = items.find((i) => selected.has(i.id));
+              if (it) {
+                allowLeaving();
+                Native?.shareFile(it.uri, it.mime, it.name);
+              }
+            }} />
           <ActionBtn icon="fileOpen" label="Restaurer" onPress={restore} />
           <ActionBtn icon="trash" label="Supprimer" onPress={remove} danger />
         </Animated.View>
@@ -406,6 +430,10 @@ export default function VaultScreen() {
     Native?.vaultStatus().then(setStatus);
   }, []);
   useEffect(load, [load]);
+  const onSetupDone = useCallback(() => {
+    useVault.getState().unlock();
+    load();
+  }, [load]);
 
   // No screenshots, no preview in the recent apps screen.
   useEffect(() => {
@@ -413,6 +441,7 @@ export default function VaultScreen() {
     return () => {
       if (!useVault.getState().openMedia) Native?.setSecure(false);
     };
+    // Keep the flag while a private file is open on top.
   }, []);
 
   return (
@@ -439,12 +468,7 @@ export default function VaultScreen() {
       {!status ? (
         <ActivityIndicator color={t.accent} style={{ marginTop: 80 }} />
       ) : !status.hasPin ? (
-        <Setup
-          onDone={() => {
-            load();
-            useVault.getState().unlock();
-          }}
-        />
+        <Setup onDone={onSetupDone} />
       ) : unlocked ? (
         <Content />
       ) : (

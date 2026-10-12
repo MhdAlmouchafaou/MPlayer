@@ -225,10 +225,26 @@ export default function VideoPlayerScreen() {
     if (!secret) return;
     Native?.setSecure(true);
     return () => {
-      Native?.setSecure(false);
+      // The vault grid may still be underneath: keep the protection while it is open.
+      if (!useVault.getState().unlocked) Native?.setSecure(false);
       useVault.setState({ openMedia: false });
     };
   }, [secret]);
+
+  // Hardware volume keys change the level behind our back: keep the swipe start in sync.
+  useEffect(() => {
+    const timer = setInterval(() => {
+      Native?.getSystemVolume().then((v) => {
+        const cur = volume.current;
+        if (cur.boost > 0) return;
+        if (v.current !== cur.step) {
+          volume.current = { ...cur, level: v.current / Math.max(1, v.max), max: v.max, step: v.current };
+          syncLevelsRef.current();
+        }
+      });
+    }, 1500);
+    return () => clearInterval(timer);
+  }, []);
 
   // Auto-rotate: the screen follows how the phone is held. Off: stays as it is.
   useEffect(() => {
@@ -254,6 +270,15 @@ export default function VideoPlayerScreen() {
     };
   }, [W, H]);
   const inPip = pip || smallWindow;
+
+  // Activity stopped: the PiP window was closed or the app left without PiP.
+  useEffect(() => {
+    if (!Native) return;
+    const sub = Native.addListener('onActivityStop', () => {
+      if (!useMedia.getState().video.background) useVideo.getState().pause();
+    });
+    return () => sub.remove();
+  }, []);
 
   // Going to background: keep playing (PiP / background audio) or pause.
   useEffect(() => {
@@ -466,7 +491,8 @@ export default function VideoPlayerScreen() {
     }
   }, []);
   const onHoldEnd = useCallback(() => {
-    if (holdSpeed.current !== null) useVideo.getState().setSpeed(holdSpeed.current);
+    if (holdSpeed.current === null) return;
+    useVideo.getState().setSpeed(holdSpeed.current);
     holdSpeed.current = null;
     setHud(null);
   }, []);
@@ -620,6 +646,7 @@ export default function VideoPlayerScreen() {
   // --- tools ---
   const capture = useCallback(async () => {
     if (!Native || !item) return;
+    if (isVaultUri(item.uri)) return toast('Capture désactivée pour les vidéos privées');
     flashOpacity.value = 0.85;
     flashOpacity.value = withTiming(0, { duration: 380 });
     setFlash((f) => f + 1);
@@ -631,6 +658,7 @@ export default function VideoPlayerScreen() {
 
   const addMoment = useCallback(async () => {
     if (!item) return;
+    if (isVaultUri(item.uri)) return toast('Moments désactivés pour les vidéos privées');
     const pos = useVideo.getState().position;
     const frame = Native ? await Native.getFrameAt(item.uri, pos, 320, false).catch(() => null) : null;
     useMedia.getState().addMoment(item.key, { id: uid(), position: pos, label: `Moment à ${fmt(pos)}`, thumb: frame, at: Date.now() });

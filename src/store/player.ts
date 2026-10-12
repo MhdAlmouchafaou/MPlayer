@@ -300,7 +300,7 @@ export function attachPlayerEvents() {
       }
       const track = useLibrary.getState().byId[id];
       usePlayer.setState({ index: i, position: 0, duration: track?.duration ?? 0 });
-      if (id) useUserStore.getState().recordPlay(id);
+      if (id && !id.startsWith('vault:')) useUserStore.getState().recordPlay(id);
       saveSession(true);
     }),
     Native.addListener('onPlayingChange', ({ isPlaying, kind }) => {

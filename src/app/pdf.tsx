@@ -90,7 +90,7 @@ export default function PdfReader() {
     return () => {
       alive = false;
       if (secret) {
-        Native!.setSecure(false);
+        if (!useVault.getState().unlocked) Native!.setSecure(false);
         useVault.setState({ openMedia: false });
       }
       Native!.pdfClose(uri);

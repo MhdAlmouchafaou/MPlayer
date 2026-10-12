@@ -7,6 +7,8 @@ type VaultState = {
   loading: boolean;
   /** Set while a vault file is open in the video player, PDF reader or music player. */
   openMedia: boolean;
+  /** Until this time, leaving the app (picker, share sheet, settings) does not lock. */
+  leaveAllowedUntil: number;
   unlock: () => void;
   lock: () => void;
   refresh: () => Promise<void>;
@@ -19,6 +21,7 @@ export const useVault = create<VaultState>((set, get) => ({
   items: [],
   loading: false,
   openMedia: false,
+  leaveAllowedUntil: 0,
   unlock: () => {
     set({ unlocked: true });
     get().refresh();

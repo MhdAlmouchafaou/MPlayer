@@ -18,10 +18,15 @@ export function VaultGuard() {
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
-      if (state !== 'background' && state !== 'inactive') return;
       const v = useVault.getState();
+      if (state === 'active') {
+        if (Date.now() > v.leaveAllowedUntil) useVault.setState({ leaveAllowedUntil: 0 });
+        if (!v.unlocked && !v.openMedia && !VAULT_ROUTES.includes(path.current)) Native?.setSecure(false);
+        return;
+      }
+      if (state !== 'background') return;
       if (!v.unlocked && !v.openMedia) return;
-      if (state === 'inactive') return; // wait for the real background event (dialogs also trigger inactive)
+      if (Date.now() < v.leaveAllowedUntil) return; // a system picker or share sheet we opened ourselves
       const showingPrivate = VAULT_ROUTES.includes(path.current) || (v.openMedia && (path.current === '/video' || path.current === '/pdf'));
       v.lock();
       stopVaultMedia();
@@ -33,7 +38,6 @@ export function VaultGuard() {
         }
         router.replace('/');
       }
-      Native?.setSecure(false);
     });
     return () => sub.remove();
   }, []);

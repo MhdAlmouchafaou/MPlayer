@@ -10,6 +10,11 @@ import { useVideos } from '../store/videos';
 import { useDocs } from '../store/docs';
 import { plural } from '../utils';
 
+/** Lets the next trip outside the app (system picker, share sheet…) keep the vault open. */
+export function allowLeaving(ms = 10 * 60_000) {
+  useVault.setState({ leaveAllowedUntil: Date.now() + ms });
+}
+
 /**
  * Moves files into the private folder. Without "all files" access Android does not let
  * us delete the originals, so we ask first; the user can still choose to only copy.
@@ -53,6 +58,7 @@ export async function moveToVault(uris: string[], label?: string) {
       'Pour retirer les fichiers de la galerie et des autres applications, MPlayer doit pouvoir « gérer tous les fichiers ». Sans cette autorisation, seule une copie protégée est créée.',
     confirmLabel: 'Autoriser',
     onConfirm: () => {
+      allowLeaving(5 * 60_000);
       Native!.requestAllFilesAccess();
       toast('Activez l’autorisation puis recommencez');
     },
@@ -61,7 +67,9 @@ export async function moveToVault(uris: string[], label?: string) {
 
 export async function pickIntoVault() {
   try {
+    allowLeaving();
     const res = await DocumentPicker.getDocumentAsync({ type: '*/*', multiple: true, copyToCacheDirectory: false });
+    useVault.setState({ leaveAllowedUntil: 0 });
     if (res.canceled || !res.assets?.length) return;
     await moveToVault(res.assets.map((a) => a.uri));
   } catch {
@@ -112,6 +120,7 @@ export function openVaultItem(item: VaultItem, all: VaultItem[]) {
   } else if (item.kind === 'image') {
     router.push({ pathname: '/vault-image', params: { id: item.id } });
   } else {
+    allowLeaving();
     Native?.openWithSystem(item.uri, item.mime).then((ok) => !ok && toast('Aucune application pour ouvrir ce fichier'));
   }
 }
@@ -123,4 +132,10 @@ export function stopVaultMedia() {
   const p = usePlayer.getState();
   if (p.queue.some((id) => id.startsWith('vault:'))) p.clearQueue();
   useUI.getState().setPlayerOpen(false);
+  // Forget the private tracks that were registered for playback.
+  useLibrary.setState((s) => {
+    const byId = { ...s.byId };
+    for (const k of Object.keys(byId)) if (k.startsWith('vault:')) delete byId[k];
+    return { byId };
+  });
 }

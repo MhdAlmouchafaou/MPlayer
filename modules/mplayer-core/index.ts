@@ -149,6 +149,8 @@ export type CoreEvents = {
   onVlcProgress: (e: { position: number; duration: number }) => void;
   onVlcError: (e: { message: string }) => void;
   onVaultProgress: (e: { done: number; total: number; name: string }) => void;
+  onActivityStop: () => void;
+  onActivityStart: () => void;
 };
 
 export interface CoreNative {
