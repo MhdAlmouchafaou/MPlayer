@@ -1,0 +1,9 @@
+name: Probe
+on: [push]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -s https://repo1.maven.org/maven2/org/videolan/android/libvlc-all/maven-metadata.xml | grep -E "<version>|<latest>|<release>" | tail -8
+          curl -s https://dl.google.com/android/maven2/androidx/media3/media3-exoplayer/maven-metadata.xml | grep -o "<version>1\.[0-9]*\.[0-9]*</version>" | tail -4
