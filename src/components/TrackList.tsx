@@ -15,7 +15,7 @@ import { PopupMenu } from './PopupMenu';
 import { ROW_HEIGHT, TrackRow } from './rows';
 import { RoundButton } from './ui';
 
-export const MINI_SPACE = 92;
+export const MINI_SPACE = 160;
 
 type Props = {
   tracks: Track[];

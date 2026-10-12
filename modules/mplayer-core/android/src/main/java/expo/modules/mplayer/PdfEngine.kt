@@ -144,6 +144,34 @@ object PdfEngine {
     }
   }
 
+  /** First page preview, rendered without keeping the document open. */
+  fun thumbnail(context: Context, uriString: String, width: Int): String? {
+    val dir = File(context.cacheDir, "mplayer-pdf/thumbs").apply { mkdirs() }
+    val target = File(dir, "${hash(uriString)}_$width.jpg")
+    if (target.exists() && target.length() > 0) return Uri.fromFile(target).toString()
+    var pfd: ParcelFileDescriptor? = null
+    var renderer: PdfRenderer? = null
+    return try {
+      pfd = openPfd(context, uriString)
+      renderer = PdfRenderer(pfd)
+      if (renderer.pageCount == 0) return null
+      val page = renderer.openPage(0)
+      val h = (width.toFloat() * page.height / page.width).toInt().coerceIn(1, width * 3)
+      val bmp = Bitmap.createBitmap(width, h, Bitmap.Config.ARGB_8888)
+      bmp.eraseColor(Color.WHITE)
+      page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+      page.close()
+      FileOutputStream(target).use { bmp.compress(Bitmap.CompressFormat.JPEG, 85, it) }
+      bmp.recycle()
+      Uri.fromFile(target).toString()
+    } catch (_: Throwable) {
+      null
+    } finally {
+      try { renderer?.close() } catch (_: Throwable) {}
+      try { pfd?.close() } catch (_: Throwable) {}
+    }
+  }
+
   fun clearCache(context: Context) {
     File(context.cacheDir, "mplayer-pdf").deleteRecursively()
   }

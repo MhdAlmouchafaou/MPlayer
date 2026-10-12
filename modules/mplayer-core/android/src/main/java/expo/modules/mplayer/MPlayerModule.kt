@@ -89,7 +89,7 @@ class MPlayerModule : Module() {
         p.pause()
         safeSend("onSleepTimerEnd", emptyMap())
       }
-      if (tickCount % 5 == 0) emitProgress(p)
+      if (tickCount % (if (currentKind() == "video") 2 else 5) == 0) emitProgress(p)
       if (p.isPlaying || intentOf(p) || sleepDeadline > 0) {
         mainHandler.postDelayed(this, 100)
       }
@@ -877,6 +877,9 @@ class MPlayerModule : Module() {
     }
     AsyncFunction("pdfRender") { uri: String, page: Int, width: Int, mode: Int ->
       PdfEngine.render(context, uri, page, width, mode)
+    }
+    AsyncFunction("pdfThumbnail") { uri: String, width: Int ->
+      PdfEngine.thumbnail(context, uri, width)
     }
     AsyncFunction("pdfClose") { uri: String ->
       PdfEngine.close(uri)

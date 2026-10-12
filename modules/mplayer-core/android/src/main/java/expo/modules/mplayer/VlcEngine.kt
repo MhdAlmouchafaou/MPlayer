@@ -6,6 +6,7 @@ import android.os.ParcelFileDescriptor
 import org.videolan.libvlc.LibVLC
 import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
+import org.videolan.libvlc.interfaces.IMedia
 import org.videolan.libvlc.util.VLCVideoLayout
 import java.io.File
 
@@ -76,7 +77,7 @@ object VlcEngine {
     val track = try { p.getCurrentVideoTrack() } catch (_: Throwable) { null } ?: return
     var w = track.width
     var h = track.height
-    if (track.orientation == Media.VideoTrack.Orientation.LeftBottom || track.orientation == Media.VideoTrack.Orientation.RightTop) {
+    if (track.orientation == IMedia.VideoTrack.Orientation.LeftBottom || track.orientation == IMedia.VideoTrack.Orientation.RightTop) {
       val t = w; w = h; h = t
     }
     if (track.sarDen > 0 && track.sarNum > 0) w = w * track.sarNum / track.sarDen

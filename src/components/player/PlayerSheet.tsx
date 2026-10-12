@@ -50,6 +50,7 @@ export function PlayerSheet() {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const open = useUI((s) => s.playerOpen);
+  const bottomInset = useUI((s) => s.bottomInset);
   const setOpen = useUI((s) => s.setPlayerOpen);
   const currentId = usePlayer((s) => s.queue[s.index]);
   const track = useLibrary((s) => (currentId ? s.byId[currentId] : undefined));
@@ -138,7 +139,7 @@ export function PlayerSheet() {
     <>
       {visible ? (
         <GestureDetector gesture={miniPan}>
-          <Animated.View style={[styles.mini, { bottom: insets.bottom + 6, backgroundColor: palette.mini }, miniStyle]}>
+          <Animated.View style={[styles.mini, { bottom: insets.bottom + 6 + bottomInset, backgroundColor: palette.mini }, miniStyle]}>
             <Pressable
               style={styles.miniMain}
               onPress={() => {

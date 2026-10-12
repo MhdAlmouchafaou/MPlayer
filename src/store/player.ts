@@ -4,6 +4,7 @@ import { peekArtwork } from '../lib/artwork';
 import { shuffleArray } from '../utils';
 import { tracksFromIds, useLibrary, type Track } from './library';
 import { useUserStore } from './user';
+import { useVideo } from './video';
 
 export type RepeatMode = 0 | 1 | 2; // off, one, all
 
@@ -114,6 +115,13 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
 
   playTracks: async (tracks, startIndex = 0, opts) => {
     if (!tracks.length) return;
+    // Music takes the shared player back from a video.
+    const video = useVideo.getState();
+    if (video.active) {
+      video.saveProgress();
+      if (video.engine === 'vlc') Native?.vlcStop();
+      useVideo.setState({ active: false, isPlaying: false });
+    }
     const settings = useUserStore.getState().settings;
     const start = tracks[Math.max(0, Math.min(startIndex, tracks.length - 1))];
     let list = settings.queueMode === 'single' && !opts?.shuffle ? [start] : tracks;
@@ -282,7 +290,8 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
 export function attachPlayerEvents() {
   if (!Native) return () => {};
   const subs = [
-    Native.addListener('onTrackChange', ({ index, id }) => {
+    Native.addListener('onTrackChange', ({ index, id, kind }) => {
+      if (kind === 'video') return;
       const { queue } = usePlayer.getState();
       let i = index;
       if (queue[i] !== id) {
@@ -294,15 +303,18 @@ export function attachPlayerEvents() {
       if (id) useUserStore.getState().recordPlay(id);
       saveSession(true);
     }),
-    Native.addListener('onPlayingChange', ({ isPlaying }) => {
+    Native.addListener('onPlayingChange', ({ isPlaying, kind }) => {
+      if (kind === 'video') return;
       usePlayer.setState({ isPlaying });
       if (!isPlaying) saveSession(true);
     }),
-    Native.addListener('onProgress', ({ position, duration }) => {
+    Native.addListener('onProgress', ({ position, duration, kind }) => {
+      if (kind === 'video') return;
       usePlayer.setState(duration > 0 ? { position, duration } : { position });
       saveSession();
     }),
-    Native.addListener('onQueueEnded', () => {
+    Native.addListener('onQueueEnded', ({ kind }) => {
+      if (kind === 'video') return;
       usePlayer.setState({ isPlaying: false });
     }),
     Native.addListener('onSleepTimerEnd', () => {

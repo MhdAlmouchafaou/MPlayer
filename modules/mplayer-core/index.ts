@@ -221,6 +221,7 @@ export interface CoreNative {
   pdfOpen(uri: string): Promise<PdfInfo>;
   pdfRender(uri: string, page: number, width: number, mode: number): Promise<string | null>;
   pdfClose(uri: string): Promise<void>;
+  pdfThumbnail(uri: string, width: number): Promise<string | null>;
   pdfClearCache(): Promise<void>;
 
   addListener<K extends keyof CoreEvents>(event: K, listener: CoreEvents[K]): Subscription;

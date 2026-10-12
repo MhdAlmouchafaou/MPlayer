@@ -25,6 +25,8 @@ type ConfirmState = {
 };
 
 type UIState = {
+  bottomInset: number;
+  setBottomInset: (v: number) => void;
   playerOpen: boolean;
   setPlayerOpen: (open: boolean) => void;
 
@@ -55,6 +57,8 @@ type UIState = {
 };
 
 export const useUI = create<UIState>((set) => ({
+  bottomInset: 0,
+  setBottomInset: (bottomInset) => set({ bottomInset }),
   playerOpen: false,
   setPlayerOpen: (playerOpen) => set({ playerOpen }),
 

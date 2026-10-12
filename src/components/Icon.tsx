@@ -42,7 +42,41 @@ export type IconName =
   | 'eyeOff'
   | 'clock'
   | 'speed'
-  | 'folder';
+  | 'folder'
+  | 'video'
+  | 'film'
+  | 'doc'
+  | 'grid'
+  | 'list'
+  | 'lock'
+  | 'unlock'
+  | 'rotate'
+  | 'pip'
+  | 'camera'
+  | 'aspect'
+  | 'subtitles'
+  | 'audioTrack'
+  | 'loop'
+  | 'frameBack'
+  | 'frameFwd'
+  | 'bookmark'
+  | 'bookmarkFilled'
+  | 'mirror'
+  | 'sun'
+  | 'headphones'
+  | 'replay10'
+  | 'forward10'
+  | 'fileOpen'
+  | 'history'
+  | 'zoomIn'
+  | 'page'
+  | 'moon'
+  | 'sepia'
+  | 'hd'
+  | 'checkCircle'
+  | 'spark'
+  | 'tune'
+  | 'eye';
 
 type Props = { name: IconName; size?: number; color?: string; strokeWidth?: number };
 
@@ -294,6 +328,258 @@ function IconImpl({ name, size = 24, color = '#000', strokeWidth = 1.7 }: Props)
         <>
           <Circle {...s} cx={12} cy={12} r={8.3} />
           <Path {...s} d="M12 7.5V12l3 2" />
+        </>
+      );
+      break;
+    case 'video':
+      body = (
+        <>
+          <Rect {...s} x={3.2} y={5.5} width={13} height={13} rx={3} />
+          <Path {...s} d="M16.2 10.2l3.6-2.3c.5-.3 1.2 0 1.2.7v6.8c0 .6-.7 1-1.2.7l-3.6-2.3" />
+        </>
+      );
+      break;
+    case 'film':
+      body = (
+        <>
+          <Rect {...s} x={3.5} y={4} width={17} height={16} rx={3} />
+          <Path {...s} d="M7.5 4v16M16.5 4v16M3.5 9h4M3.5 15h4M16.5 9h4M16.5 15h4" />
+        </>
+      );
+      break;
+    case 'doc':
+      body = (
+        <>
+          <Path {...s} d="M14 3.5H7.5c-1.1 0-2 .9-2 2v13c0 1.1.9 2 2 2h9c1.1 0 2-.9 2-2V8z" />
+          <Path {...s} d="M14 3.5V8h4.5M8.8 12.5h6.4M8.8 16h4.4" />
+        </>
+      );
+      break;
+    case 'page':
+      body = (
+        <>
+          <Rect {...s} x={5} y={3.5} width={14} height={17} rx={2.5} />
+          <Path {...s} d="M8.5 8h7M8.5 11.5h7M8.5 15h4" />
+        </>
+      );
+      break;
+    case 'grid':
+      body = (
+        <>
+          <Rect {...s} x={4} y={4} width={6.5} height={6.5} rx={1.8} />
+          <Rect {...s} x={13.5} y={4} width={6.5} height={6.5} rx={1.8} />
+          <Rect {...s} x={4} y={13.5} width={6.5} height={6.5} rx={1.8} />
+          <Rect {...s} x={13.5} y={13.5} width={6.5} height={6.5} rx={1.8} />
+        </>
+      );
+      break;
+    case 'list':
+      body = <Path {...s} d="M8.5 6h11.5M8.5 12h11.5M8.5 18h11.5M4 6h.5M4 12h.5M4 18h.5" />;
+      break;
+    case 'lock':
+      body = (
+        <>
+          <Rect {...s} x={5} y={10.5} width={14} height={10} rx={2.5} />
+          <Path {...s} d="M8 10.5V7.8a4 4 0 018 0v2.7M12 14.5v2" />
+        </>
+      );
+      break;
+    case 'unlock':
+      body = (
+        <>
+          <Rect {...s} x={5} y={10.5} width={14} height={10} rx={2.5} />
+          <Path {...s} d="M8 10.5V7.8a4 4 0 017.6-1.7M12 14.5v2" />
+        </>
+      );
+      break;
+    case 'rotate':
+      body = (
+        <>
+          <Rect {...s} x={8} y={3.5} width={8} height={14} rx={2} transform="rotate(-35 12 12)" />
+          <Path {...s} d="M3.6 13.5a8.5 8.5 0 004.9 6.3M20.4 10.5a8.5 8.5 0 00-4.9-6.3M15.6 3.1l.1 2.5-2.4.5M8.4 20.9l-.1-2.5 2.4-.5" />
+        </>
+      );
+      break;
+    case 'pip':
+      body = (
+        <>
+          <Rect {...s} x={3} y={5} width={18} height={14} rx={2.8} />
+          <Rect {...f} x={11.5} y={11.5} width={7} height={5} rx={1.2} />
+        </>
+      );
+      break;
+    case 'camera':
+      body = (
+        <>
+          <Path {...s} d="M4 8.5c0-1.1.9-2 2-2h2l1.4-2h5.2l1.4 2h2c1.1 0 2 .9 2 2v9c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2z" />
+          <Circle {...s} cx={12} cy={12.8} r={3.5} />
+        </>
+      );
+      break;
+    case 'aspect':
+      body = (
+        <>
+          <Rect {...s} x={3} y={5} width={18} height={14} rx={2.8} />
+          <Path {...s} d="M7 12.5V9h3.5M17 11.5V15h-3.5" />
+        </>
+      );
+      break;
+    case 'subtitles':
+      body = (
+        <>
+          <Rect {...s} x={3} y={5} width={18} height={14} rx={2.8} />
+          <Path {...s} d="M6.8 13h3.5M12.6 13h4.6M6.8 16h6.4M15.4 16h1.8" />
+        </>
+      );
+      break;
+    case 'audioTrack':
+      body = (
+        <>
+          <Path {...s} d="M9.5 17V6.2c0-.5.4-.8.9-.8l7.6-1.3c.5-.1.9.3.9.8V15" />
+          <Circle {...s} cx={7.3} cy={17} r={2.3} />
+          <Circle {...s} cx={16.6} cy={15} r={2.3} />
+        </>
+      );
+      break;
+    case 'loop':
+      body = (
+        <>
+          <Path {...s} d="M17 8.5H8a4.5 4.5 0 000 9h1M7 15.5h9a4.5 4.5 0 000-9h-1" />
+          <Path {...s} strokeWidth={strokeWidth * 0.85} d="M9.2 13.5l1.4-4 1.4 4M9.7 12.2h1.8M13.6 9.5v4h1.3a1 1 0 000-2h-1.3 1.1a1 1 0 000-2z" />
+        </>
+      );
+      break;
+    case 'frameBack':
+      body = (
+        <>
+          <Path {...s} d="M14.5 7l-5 5 5 5" />
+          <Path {...s} d="M18.5 7v10M5.5 7v10" />
+        </>
+      );
+      break;
+    case 'frameFwd':
+      body = (
+        <>
+          <Path {...s} d="M9.5 7l5 5-5 5" />
+          <Path {...s} d="M5.5 7v10M18.5 7v10" />
+        </>
+      );
+      break;
+    case 'bookmark':
+      body = <Path {...s} d="M7 4.5h10c.6 0 1 .4 1 1v14.3c0 .4-.5.7-.8.4L12 16.6l-5.2 3.6c-.3.3-.8 0-.8-.4V5.5c0-.6.4-1 1-1z" />;
+      break;
+    case 'bookmarkFilled':
+      body = <Path fill={color} stroke={color} strokeWidth={strokeWidth} strokeLinejoin="round" d="M7 4.5h10c.6 0 1 .4 1 1v14.3c0 .4-.5.7-.8.4L12 16.6l-5.2 3.6c-.3.3-.8 0-.8-.4V5.5c0-.6.4-1 1-1z" />;
+      break;
+    case 'mirror':
+      body = (
+        <>
+          <Path {...s} d="M12 3.5v17" strokeDasharray="2 2.2" />
+          <Path {...s} d="M9 7L4 17h5zM15 7l5 10h-5z" />
+        </>
+      );
+      break;
+    case 'sun':
+      body = (
+        <>
+          <Circle {...s} cx={12} cy={12} r={4} />
+          <Path {...s} d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4" />
+        </>
+      );
+      break;
+    case 'headphones':
+      body = (
+        <>
+          <Path {...s} d="M4 15v-3a8 8 0 0116 0v3" />
+          <Rect {...s} x={3.5} y={13.5} width={4.5} height={7} rx={2} />
+          <Rect {...s} x={16} y={13.5} width={4.5} height={7} rx={2} />
+        </>
+      );
+      break;
+    case 'replay10':
+      body = (
+        <>
+          <Path {...s} d="M5.2 8.5A8 8 0 1112 20" />
+          <Path {...s} d="M4.5 4.5v4h4" />
+        </>
+      );
+      break;
+    case 'forward10':
+      body = (
+        <>
+          <Path {...s} d="M18.8 8.5A8 8 0 1012 20" />
+          <Path {...s} d="M19.5 4.5v4h-4" />
+        </>
+      );
+      break;
+    case 'fileOpen':
+      body = (
+        <>
+          <Path {...s} d="M3.5 7c0-.8.7-1.5 1.5-1.5h4.3l2 2.2H19c.8 0 1.5.7 1.5 1.5v8.3c0 .8-.7 1.5-1.5 1.5H5c-.8 0-1.5-.7-1.5-1.5z" />
+          <Path {...s} d="M12 11v5M9.8 13.2L12 11l2.2 2.2" />
+        </>
+      );
+      break;
+    case 'history':
+      body = (
+        <>
+          <Path {...s} d="M4.5 12a7.5 7.5 0 102.2-5.3L4.5 9" />
+          <Path {...s} d="M4.5 4.8V9h4.2M12 8v4.3l2.8 1.7" />
+        </>
+      );
+      break;
+    case 'zoomIn':
+      body = (
+        <>
+          <Circle {...s} cx={10.8} cy={10.8} r={6.6} />
+          <Path {...s} d="M15.6 15.6l4.6 4.6M10.8 8v5.6M8 10.8h5.6" />
+        </>
+      );
+      break;
+    case 'moon':
+      body = <Path {...s} d="M19.5 14.6A8 8 0 019.4 4.5a8 8 0 1010.1 10.1z" />;
+      break;
+    case 'sepia':
+      body = (
+        <>
+          <Circle {...s} cx={12} cy={12} r={8} />
+          <Path {...f} d="M12 4a8 8 0 010 16z" />
+        </>
+      );
+      break;
+    case 'hd':
+      body = (
+        <>
+          <Rect {...s} x={3} y={5.5} width={18} height={13} rx={2.8} />
+          <Path {...s} d="M7 9.5v5M10 9.5v5M7 12h3M13.2 9.5v5h1.6a2.5 2.5 0 000-5z" />
+        </>
+      );
+      break;
+    case 'checkCircle':
+      body = (
+        <>
+          <Circle {...s} cx={12} cy={12} r={8.3} />
+          <Path {...s} d="M8.3 12.3l2.5 2.5 5-5.2" />
+        </>
+      );
+      break;
+    case 'spark':
+      body = <Path {...s} d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />;
+      break;
+    case 'tune':
+      body = (
+        <>
+          <Path {...s} d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+          <Circle {...s} cx={15} cy={7} r={2} />
+          <Circle {...s} cx={9} cy={17} r={2} />
+        </>
+      );
+      break;
+    case 'eye':
+      body = (
+        <>
+          <Path {...s} d="M3.5 12s3-5.5 8.5-5.5 8.5 5.5 8.5 5.5-3 5.5-8.5 5.5S3.5 12 3.5 12z" />
+          <Circle {...s} cx={12} cy={12} r={2.5} />
         </>
       );
       break;
