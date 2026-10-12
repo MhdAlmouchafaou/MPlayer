@@ -109,6 +109,8 @@ export default function RootLayout() {
                 screenOptions={{
                   headerShown: false,
                   animation: 'slide_from_right',
+                  animationDuration: 260,
+                  freezeOnBlur: true,
                   contentStyle: { backgroundColor: t.bg },
                 }}
               >

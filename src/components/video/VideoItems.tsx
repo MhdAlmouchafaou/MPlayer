@@ -60,7 +60,7 @@ export const VideoThumb = memo(function VideoThumb({
   );
 });
 
-export const VIDEO_ROW = 92;
+export const VIDEO_ROW = 88;
 
 export const VideoRow = memo(function VideoRow({
   video,
@@ -85,7 +85,7 @@ export const VideoRow = memo(function VideoRow({
       android_ripple={{ color: t.dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }}
       style={styles.row}
     >
-      <VideoThumb video={video} width={124} height={72} radius={14} />
+      <VideoThumb video={video} width={118} height={68} radius={13} />
       <View style={styles.rowText}>
         <Text numberOfLines={2} style={[styles.title, { color: active ? t.accent : t.text }]}>
           {video.title}
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   progressFill: { height: '100%' },
   row: { height: VIDEO_ROW, flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 4 },
   rowText: { flex: 1, marginLeft: 14, justifyContent: 'center' },
-  title: { fontSize: 15.5, lineHeight: 20 },
+  title: { fontSize: 15, lineHeight: 19.5 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
   badge: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1.5 },
   badgeText: { fontSize: 11.5, fontWeight: '700' },

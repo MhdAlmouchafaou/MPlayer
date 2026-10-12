@@ -15,11 +15,11 @@ type Props = {
   onPress: (index: number) => void;
 };
 
-const ACTIVE = 31;
-const INACTIVE = 17.5;
+const ACTIVE = 28;
+const INACTIVE = 16.5;
 const RATIO = INACTIVE / ACTIVE;
 const PAD = 14;
-const HEIGHT = 64;
+const HEIGHT = 58;
 
 /**
  * One UI tab strip. Every tab is laid out once at the large size; the scale, colour and

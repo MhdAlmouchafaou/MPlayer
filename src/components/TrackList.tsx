@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View, type ListRenderItem } from 'react-native';
+import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { openTrackMenu } from '../lib/actions';
 import { letterIndex, SORT_LABELS, sortTracks } from '../lib/sorting';
@@ -15,7 +16,7 @@ import { PopupMenu } from './PopupMenu';
 import { ROW_HEIGHT, TrackRow } from './rows';
 import { RoundButton } from './ui';
 
-export const MINI_SPACE = 160;
+export const MINI_SPACE = 178;
 
 type Props = {
   tracks: Track[];
@@ -51,7 +52,7 @@ export function TrackList({
   const playCounts = useUserStore((s) => s.playCounts);
   const currentId = usePlayer((s) => s.queue[s.index]);
   const playTracks = usePlayer((s) => s.playTracks);
-  const listRef = useRef<FlatList<Track>>(null);
+  const listRef = useRef<FlashListRef<Track>>(null);
   const sortRef = useRef<View>(null);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -121,19 +122,14 @@ export function TrackList({
 
   return (
     <View style={{ flex: 1 }}>
-      <FlatList
+      <FlashList
         ref={listRef}
         data={sorted}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        getItemLayout={(_, index) => ({ length: ROW_HEIGHT, offset: headerHeight + ROW_HEIGHT * index, index })}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={<EmptyState title={emptyTitle} text={emptyText ?? 'Aucune piste'} />}
         contentContainerStyle={{ paddingBottom: insets.bottom + MINI_SPACE }}
-        initialNumToRender={14}
-        maxToRenderPerBatch={12}
-        windowSize={11}
-        removeClippedSubviews
         showsVerticalScrollIndicator={!showAlphabet}
       />
       {showAlphabet ? (

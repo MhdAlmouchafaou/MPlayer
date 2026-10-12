@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-export type Section = 'videos' | 'music' | 'docs';
+export type Section = 'videos' | 'music' | 'docs' | 'settings';
 
 export type VideoProgress = { position: number; duration: number; at: number };
 export type Moment = { id: string; position: number; label: string; thumb?: string | null; at: number };

@@ -23,6 +23,9 @@ export type Theme = {
   scrim: string;
   danger: string;
   icon: string;
+  navBar: string;
+  navPill: string;
+  navActive: string;
 };
 
 export const light: Theme = {
@@ -47,6 +50,9 @@ export const light: Theme = {
   scrim: 'rgba(10,12,18,0.32)',
   danger: '#D93B3B',
   icon: '#3A3D44',
+  navBar: '#FFFFFF',
+  navPill: '#EDF0F6',
+  navActive: '#2F55E4',
 };
 
 export const dark: Theme = {
@@ -71,6 +77,9 @@ export const dark: Theme = {
   scrim: 'rgba(0,0,0,0.55)',
   danger: '#FF6B6B',
   icon: '#D4D6DC',
+  navBar: '#1F2026',
+  navPill: '#2E3039',
+  navActive: '#8FB2FF',
 };
 
 export function useTheme(): Theme {

@@ -64,21 +64,21 @@ export function ScreenHeader({ title }: { title: string }) {
 const styles = StyleSheet.create({
   item: {
     paddingHorizontal: 26,
-    paddingVertical: 17,
+    paddingVertical: 15,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   title: {
-    fontSize: 17.5,
+    fontSize: 16.5,
   },
   value: {
-    fontSize: 15,
+    fontSize: 14,
     marginTop: 3,
   },
   sub: {
-    fontSize: 14,
+    fontSize: 13,
     marginTop: 3,
   },
   divider: {

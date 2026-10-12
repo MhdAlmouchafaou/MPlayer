@@ -16,6 +16,7 @@ import { toast, useUI } from '../store/ui';
 import { useTheme } from '../theme';
 
 const GAP = 10;
+const NO_PAGES: number[] = [];
 
 type PageProps = { uri: string; index: number; width: number; height: number; renderWidth: number; mode: number; visible: boolean; dark: boolean };
 
@@ -56,7 +57,7 @@ export default function PdfReader() {
   const name = (params.name ?? decodeURIComponent(uri?.split('/').pop() ?? 'Document')).replace(/\.pdf$/i, '');
   const settings = useMedia((s) => s.pdf);
   const updatePdf = useMedia((s) => s.updatePdf);
-  const bookmarks = useMedia((s) => s.docBookmarks[uri] ?? []);
+  const bookmarks = useMedia((s) => s.docBookmarks[uri]) ?? NO_PAGES;
   const favorite = useMedia((s) => s.docFavorites.includes(uri));
   const [info, setInfo] = useState<PdfInfo | null>(null);
   const [error, setError] = useState<string | null>(null);

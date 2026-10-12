@@ -13,6 +13,7 @@ import { SectionPager } from '../components/SectionPager';
 import { IconButton } from '../components/ui';
 import { AllVideosTab, HistoryTab, VideoFavoritesTab, VideoFoldersTab } from '../components/video/VideoTabs';
 import { createPlaylistFlow } from '../lib/actions';
+import { SettingsContent } from './settings';
 import { requestMedia } from '../lib/permissions';
 import { useDocs } from '../store/docs';
 import { useLibrary } from '../store/library';
@@ -101,6 +102,25 @@ function MusicSection({ onTab }: { onTab: (k: TabKey) => void }) {
   );
 }
 
+function SettingsHeader() {
+  const t = useTheme();
+  return (
+    <View>
+      <Text style={[styles.bigTitle, { color: t.brand }]}>Paramètres</Text>
+      <Pressable onPress={() => router.push('/vault')} style={[styles.vaultCard, { backgroundColor: t.dark ? '#1C2436' : '#E6EEFF' }]} android_ripple={{ color: 'rgba(0,0,0,0.06)' }}>
+        <View style={[styles.vaultIcon, { backgroundColor: t.accent }]}>
+          <Icon name="lock" size={24} color="#fff" strokeWidth={2} />
+        </View>
+        <View style={{ flex: 1, marginLeft: 14 }}>
+          <Text style={{ color: t.text, fontSize: 17, fontWeight: '600' }}>Dossier privé</Text>
+          <Text style={{ color: t.textSecondary, fontSize: 13.5, marginTop: 2 }}>Vidéos, photos, audios et documents protégés par code</Text>
+        </View>
+        <Icon name="chevronRight" size={20} color={t.textTertiary} />
+      </Pressable>
+    </View>
+  );
+}
+
 function DocSection() {
   return (
     <SectionPager
@@ -119,7 +139,12 @@ export default function Home() {
   const setSection = useMedia((s) => s.setSection);
   const [musicTab, setMusicTab] = useState<TabKey>('tracks');
   // Sections are mounted on first visit, then kept alive to preserve scroll and tab.
-  const [visited, setVisited] = useState<Record<Section, boolean>>({ videos: section === 'videos', music: section === 'music', docs: section === 'docs' });
+  const [visited, setVisited] = useState<Record<Section, boolean>>({
+    videos: section === 'videos',
+    music: section === 'music',
+    docs: section === 'docs',
+    settings: section === 'settings',
+  });
   const moreRef = useRef<View>(null);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
@@ -163,7 +188,9 @@ export default function Home() {
             { label: 'Ouvrir un flux réseau', onPress: () => router.push('/stream') },
             { label: 'Paramètres de lecture', onPress: () => router.push('/settings') },
           ]
-        : [
+        : section === 'settings'
+          ? [{ label: 'Dossier privé', onPress: () => router.push('/vault') }]
+          : [
             { label: 'Ouvrir un fichier PDF', onPress: pickDocument },
             {
               label: 'Actualiser les documents',
@@ -172,15 +199,15 @@ export default function Home() {
                 toast(`${useDocs.getState().docs.length} documents trouvés`);
               },
             },
-            { label: 'Paramètres', onPress: () => router.push('/settings') },
+            { label: 'Paramètres', onPress: () => change('settings') },
           ];
 
   const show = (s: Section) => (section === s ? styles.fill : styles.hidden);
 
   return (
     <View style={[styles.root, { backgroundColor: t.bg, paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <BrandLogo size={26} color={t.brand} />
+      <View style={[styles.header, section === 'settings' && { display: 'none' }]}>
+        <BrandLogo size={24} color={t.brand} />
         <Text style={[styles.brand, { color: t.brand, fontFamily: fonts.brand }]}>MPlayer</Text>
         <View style={{ flex: 1 }} />
         {section === 'music' && musicTab === 'playlists' ? (
@@ -205,6 +232,7 @@ export default function Home() {
         <View style={show('videos')}>{visited.videos || section === 'videos' ? <VideoSection /> : null}</View>
         <View style={show('music')}>{visited.music || section === 'music' ? <MusicSection onTab={setMusicTab} /> : null}</View>
         <View style={show('docs')}>{visited.docs || section === 'docs' ? <DocSection /> : null}</View>
+        <View style={show('settings')}>{visited.settings || section === 'settings' ? <SettingsContent bottomPad={NAV_HEIGHT + 30} header={<SettingsHeader />} /> : null}</View>
       </View>
 
       <BottomNav section={section} onChange={change} />
@@ -218,14 +246,17 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   hidden: { display: 'none' },
   header: {
-    height: 70,
+    height: 64,
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 20,
     paddingRight: 8,
     marginTop: 4,
   },
-  brand: { fontSize: 26, letterSpacing: -0.4, marginLeft: 9 },
+  brand: { fontSize: 24, letterSpacing: -0.4, marginLeft: 8 },
+  bigTitle: { fontSize: 34, fontWeight: '600', marginLeft: 24, marginTop: 50, marginBottom: 22 },
+  vaultCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 10, borderRadius: 26, padding: 16 },
+  vaultIcon: { width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   gate: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34, paddingBottom: 60 },
   gateIcon: { width: 96, height: 96, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginBottom: 28 },
   gateTitle: { fontSize: 24, fontWeight: '600', textAlign: 'center' },

@@ -171,15 +171,14 @@ export function PlayerSheet() {
             <MiniControls />
             <Pressable
               onPress={() => {
-                setMounted(true);
-                setQueueOpen(true);
-                setOpen(true);
+                haptic();
+                usePlayer.getState().clearQueue();
               }}
-              accessibilityLabel="File d'attente"
+              accessibilityLabel="Fermer le lecteur"
               android_ripple={{ color: 'rgba(255,255,255,0.2)', borderless: true, radius: 22 }}
               style={styles.miniBtn}
             >
-              <Icon name="queue" size={25} color="#fff" strokeWidth={1.8} />
+              <Icon name="close" size={23} color="#fff" strokeWidth={2} />
             </Pressable>
           </Animated.View>
         </GestureDetector>
@@ -240,7 +239,7 @@ const styles = StyleSheet.create({
   },
   miniTitle: {
     color: '#fff',
-    fontSize: 16.5,
+    fontSize: 15.5,
     fontWeight: '600',
   },
   miniArtist: {

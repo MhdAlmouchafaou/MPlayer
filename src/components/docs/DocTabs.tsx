@@ -2,7 +2,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import React, { memo, useEffect, useMemo, useState } from 'react';
-import { AppState, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Native } from '../../../modules/mplayer-core';
 import { useDocs } from '../../store/docs';
@@ -134,15 +135,12 @@ function OpenFileBar() {
 function DocList({ data, empty, header }: { data: DocEntry[]; empty: React.ReactElement; header?: React.ReactElement | null }) {
   const insets = useSafeAreaInsets();
   return (
-    <FlatList
+    <FlashList
       data={data}
       keyExtractor={(d) => d.uri}
       ListHeaderComponent={header}
       ListEmptyComponent={empty}
       contentContainerStyle={{ paddingBottom: insets.bottom + BOTTOM_SPACE }}
-      initialNumToRender={12}
-      windowSize={9}
-      removeClippedSubviews
       renderItem={({ item }) => <DocRow d={item} />}
     />
   );

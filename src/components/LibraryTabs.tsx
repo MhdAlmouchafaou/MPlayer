@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { collectionActions, createPlaylistFlow, hideFolder, openCollection } from '../lib/actions';
 import { letterIndex } from '../lib/sorting';
@@ -166,17 +167,14 @@ export function AlbumsTab() {
     useUI.getState().showSheet({ title: a.name, subtitle: a.artist, actions: collectionActions(tracksFromIds(a.trackIds)) });
   }, []);
   return (
-    <FlatList
+    <FlashList
       data={albums}
       numColumns={2}
       keyExtractor={(a) => a.id}
-      columnWrapperStyle={{ gap: 16, paddingHorizontal: 18 }}
-      contentContainerStyle={{ paddingTop: 18, paddingBottom: insets.bottom + MINI_SPACE, gap: 20 }}
-      initialNumToRender={8}
-      windowSize={7}
+      contentContainerStyle={{ paddingTop: 18, paddingBottom: insets.bottom + MINI_SPACE, paddingHorizontal: 10 }}
       ListEmptyComponent={<EmptyState text="Aucun album" />}
       renderItem={({ item }) => (
-        <Pressable onPress={() => openCollection('album', item.id)} onLongPress={() => onMore(item)} style={{ width: size }}>
+        <Pressable onPress={() => openCollection('album', item.id)} onLongPress={() => onMore(item)} style={{ width: size, marginHorizontal: 8, marginBottom: 20 }}>
           <Artwork trackId={item.coverTrack.id} albumId={item.coverTrack.albumId} size={size} radius={24} quality={384} />
           <Text numberOfLines={1} style={[styles.albumTitle, { color: t.text }]}>
             {item.name}
@@ -202,23 +200,19 @@ function NamedList<T>({
   render: (t: T, rightInset: number) => React.ReactElement;
 }) {
   const insets = useSafeAreaInsets();
-  const ref = useRef<FlatList<T>>(null);
+  const ref = useRef<FlashListRef<T>>(null);
   const letters = useMemo(() => letterIndex(items, getName), [items, getName]);
   const showAlphabet = items.length > 25;
   return (
     <View style={{ flex: 1 }}>
-      <FlatList
+      <FlashList
         ref={ref}
         data={items}
         keyExtractor={keyOf}
         renderItem={({ item }) => render(item, showAlphabet ? 30 : 6)}
-        getItemLayout={(_, index) => ({ length: ROW_HEIGHT, offset: 14 + ROW_HEIGHT * index, index })}
         ListHeaderComponent={<View style={{ height: 14 }} />}
         ListEmptyComponent={<EmptyState text="Rien à afficher" />}
         contentContainerStyle={{ paddingBottom: insets.bottom + MINI_SPACE }}
-        initialNumToRender={14}
-        windowSize={11}
-        removeClippedSubviews
         showsVerticalScrollIndicator={!showAlphabet}
       />
       {showAlphabet ? (

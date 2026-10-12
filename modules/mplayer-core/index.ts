@@ -85,6 +85,17 @@ export type TracksInfo = {
   audioUnsupported: boolean;
 };
 
+export type VaultItem = {
+  id: string;
+  name: string;
+  mime: string;
+  kind: 'video' | 'audio' | 'image' | 'pdf' | 'file';
+  size: number;
+  added: number;
+  uri: string;
+  exists: boolean;
+};
+
 export type PdfInfo = { pageCount: number; pages: { w: number; h: number }[]; key: string };
 
 export type PlayerState = {
@@ -137,6 +148,7 @@ export type CoreEvents = {
   onVlcState: (e: { state: 'playing' | 'paused' | 'stopped' | 'buffering' | 'ready' | 'ended' }) => void;
   onVlcProgress: (e: { position: number; duration: number }) => void;
   onVlcError: (e: { message: string }) => void;
+  onVaultProgress: (e: { done: number; total: number; name: string }) => void;
 };
 
 export interface CoreNative {
@@ -217,6 +229,19 @@ export interface CoreNative {
   isInPip(): Promise<boolean>;
   getSystemVolume(): Promise<{ current: number; max: number }>;
   setSystemVolumeStep(step: number): Promise<void>;
+
+  vaultStatus(): Promise<{ hasPin: boolean; length: number; failCount: number; lockedForMs: number }>;
+  vaultSetPin(pin: string): Promise<boolean>;
+  vaultVerify(pin: string): Promise<{ ok: boolean; lockedForMs: number; failCount: number }>;
+  vaultList(): Promise<VaultItem[]>;
+  vaultImport(uris: string[], removeOriginal: boolean): Promise<{ ok: boolean; name: string; removed: boolean; id?: string; error?: string }[]>;
+  vaultRestore(id: string): Promise<string | null>;
+  vaultDelete(ids: string[]): Promise<number>;
+  vaultRename(id: string, name: string): Promise<boolean>;
+  vaultUsage(): Promise<number>;
+  setSecure(on: boolean): Promise<void>;
+  openWithSystem(uri: string, mime: string): Promise<boolean>;
+  openDefaultAppsSettings(): Promise<boolean>;
 
   pdfOpen(uri: string): Promise<PdfInfo>;
   pdfRender(uri: string, page: number, width: number, mode: number): Promise<string | null>;

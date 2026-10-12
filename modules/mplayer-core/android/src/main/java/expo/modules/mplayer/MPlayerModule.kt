@@ -384,7 +384,7 @@ class MPlayerModule : Module() {
 
     Events(
       "onTrackChange", "onPlayingChange", "onProgress", "onQueueEnded", "onError", "onSleepTimerEnd",
-      "onBuffering", "onTracks", "onVideoSize", "onVlcState", "onVlcProgress", "onVlcError", "onPipChange"
+      "onBuffering", "onTracks", "onVideoSize", "onVlcState", "onVlcProgress", "onVlcError", "onPipChange", "onVaultProgress"
     )
 
     OnCreate {
@@ -871,6 +871,55 @@ class MPlayerModule : Module() {
       val am = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
       am.setStreamVolume(AudioManager.STREAM_MUSIC, step.coerceIn(0, am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)), 0)
     }
+    // endregion
+
+    // region vault
+    AsyncFunction("vaultStatus") { VaultStore.status(context) }
+    AsyncFunction("vaultSetPin") { pin: String -> VaultStore.setPin(context, pin) }
+    AsyncFunction("vaultVerify") { pin: String -> VaultStore.verify(context, pin) }
+    AsyncFunction("vaultList") { VaultStore.list(context) }
+    AsyncFunction("vaultImport") { uris: List<String>, removeOriginal: Boolean ->
+      VaultStore.importFiles(context, uris, removeOriginal) { done, total, name ->
+        safeSend("onVaultProgress", mapOf("done" to done, "total" to total, "name" to name))
+      }
+    }
+    AsyncFunction("vaultRestore") { id: String -> VaultStore.restore(context, id) }
+    AsyncFunction("vaultDelete") { ids: List<String> -> VaultStore.delete(context, ids) }
+    AsyncFunction("vaultRename") { id: String, name: String -> VaultStore.rename(context, id, name) }
+    AsyncFunction("vaultUsage") { VaultStore.usedBytes(context) }
+
+    AsyncFunction("setSecure") { on: Boolean ->
+      val window = appContext.currentActivity?.window ?: return@AsyncFunction
+      if (on) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }.runOnQueue(Queues.MAIN)
+
+    AsyncFunction("openWithSystem") { uri: String, mime: String ->
+      val parsed = Uri.parse(uri)
+      val intent = Intent(Intent.ACTION_VIEW).setDataAndType(parsed, mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+      try {
+        val activity = appContext.currentActivity
+        if (activity != null) activity.startActivity(intent) else context.startActivity(intent)
+        true
+      } catch (_: Throwable) {
+        false
+      }
+    }.runOnQueue(Queues.MAIN)
+
+    AsyncFunction("openDefaultAppsSettings") {
+      val intents = listOf(
+        Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS),
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
+      )
+      for (i in intents) {
+        try {
+          i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          context.startActivity(i)
+          return@AsyncFunction true
+        } catch (_: Throwable) {
+        }
+      }
+      false
+    }.runOnQueue(Queues.MAIN)
     // endregion
 
     // region pdf

@@ -20,6 +20,16 @@ const fmtSpeed = (v: number) => `${v.toFixed(2).replace(/0$/, '').replace('.', '
 
 export default function SettingsScreen() {
   const t = useTheme();
+  return (
+    <View style={{ flex: 1, backgroundColor: t.bg }}>
+      <ScreenHeader title="Paramètres" />
+      <SettingsContent bottomPad={110} />
+    </View>
+  );
+}
+
+export function SettingsContent({ bottomPad, header }: { bottomPad: number; header?: React.ReactNode }) {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const settings = useUserStore((s) => s.settings);
   const video = useMedia((s) => s.video);
@@ -51,8 +61,8 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <ScreenHeader title="Paramètres MPlayer" />
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + bottomPad }} showsVerticalScrollIndicator={false}>
+        {header}
         <SectionLabel>Vidéo</SectionLabel>
         <Card>
           <SettingItem

@@ -4,7 +4,7 @@ import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { Icon, type IconName } from '../Icon';
 
 export type Hud =
-  | { type: 'level'; icon: IconName; value: number; max: number; label: string; boost?: boolean }
+  | { type: 'level'; icon: IconName; value: number; max: number; label: string; boost?: boolean; side?: 'left' | 'right' }
   | { type: 'scrub'; time: string; delta: string; mode: string; precise: boolean }
   | { type: 'speed'; value: number }
   | { type: 'zoom'; value: number }
@@ -16,15 +16,21 @@ export function GestureHud({ hud }: { hud: Hud }) {
   if (hud.type === 'level') {
     const pct = Math.max(0, Math.min(1, hud.value / hud.max));
     const over = hud.max > 1 && hud.value > 1;
+    const side = hud.side ?? 'right';
     return (
-      <Animated.View entering={FadeIn.duration(120)} exiting={FadeOut.duration(220)} pointerEvents="none" style={styles.levelWrap}>
-        <View style={styles.levelCard}>
-          <Icon name={hud.icon} size={24} color="#fff" />
-          <View style={styles.levelTrack}>
-            <View style={[styles.levelFill, { width: `${pct * 100}%`, backgroundColor: over ? '#FFB547' : '#fff' }]} />
-            {hud.max > 1 ? <View style={[styles.levelTick, { left: `${(1 / hud.max) * 100}%` }]} /> : null}
+      <Animated.View
+        entering={FadeIn.duration(120)}
+        exiting={FadeOut.duration(260)}
+        pointerEvents="none"
+        style={[styles.sideWrap, side === 'left' ? { left: 28 } : { right: 28 }]}
+      >
+        <View style={styles.sideCard}>
+          <Text style={[styles.sideText, over && { color: '#FFB547' }]}>{hud.label}</Text>
+          <View style={styles.sideTrack}>
+            <View style={[styles.sideFill, { height: `${pct * 100}%`, backgroundColor: over ? '#FFB547' : '#fff' }]} />
+            {hud.max > 1 ? <View style={[styles.sideTick, { bottom: `${(1 / hud.max) * 100}%` }]} /> : null}
           </View>
-          <Text style={[styles.levelText, over && { color: '#FFB547' }]}>{hud.label}</Text>
+          <Icon name={hud.icon} size={20} color="#fff" />
         </View>
       </Animated.View>
     );
@@ -73,7 +79,12 @@ export function Buffering() {
 const styles = StyleSheet.create({
   center: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   topCenter: { position: 'absolute', top: 70, left: 0, right: 0, alignItems: 'center' },
-  levelWrap: { position: 'absolute', top: 72, left: 0, right: 0, alignItems: 'center' },
+  sideWrap: { position: 'absolute', top: 0, bottom: 0, justifyContent: 'center' },
+  sideCard: { width: 52, alignItems: 'center', backgroundColor: 'rgba(20,20,24,0.72)', borderRadius: 26, paddingVertical: 14, gap: 10 },
+  sideTrack: { width: 6, height: 150, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden', justifyContent: 'flex-end' },
+  sideFill: { width: '100%', borderRadius: 3 },
+  sideTick: { position: 'absolute', left: 0, right: 0, height: 2, backgroundColor: 'rgba(0,0,0,0.55)' },
+  sideText: { color: '#fff', fontSize: 12.5, fontWeight: '700', fontVariant: ['tabular-nums'] },
   levelCard: {
     flexDirection: 'row',
     alignItems: 'center',

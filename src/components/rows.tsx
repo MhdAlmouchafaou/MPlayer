@@ -6,8 +6,8 @@ import { artistOf } from '../utils';
 import { Artwork } from './Artwork';
 import { Icon, type IconName } from './Icon';
 
-export const ROW_HEIGHT = 66;
-const ART = 46;
+export const ROW_HEIGHT = 64;
+const ART = 44;
 
 type TrackRowProps = {
   track: Track;
@@ -141,11 +141,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth * 2,
   },
   title: {
-    fontSize: 17,
+    fontSize: 16,
     letterSpacing: 0.1,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     marginTop: 2,
   },
   more: {

@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { openVideoMenu, playVideos } from '../../lib/videoActions';
 import { useMedia } from '../../store/media';
@@ -14,7 +15,7 @@ import { PopupMenu } from '../PopupMenu';
 import { RoundButton } from '../ui';
 import { VIDEO_ROW, VideoCard, VideoRow, VideoThumb } from './VideoItems';
 
-export const BOTTOM_SPACE = 170;
+export const BOTTOM_SPACE = 178;
 
 type SortKey = 'date' | 'name' | 'size' | 'duration';
 const SORT_LABELS: Record<SortKey, string> = { date: "Date d'ajout", name: 'Nom', size: 'Taille', duration: 'Durée' };
@@ -160,23 +161,19 @@ export function VideoList({
 
   return (
     <View style={{ flex: 1 }}>
-      <FlatList
+      <FlashList
         key={`cols-${cols}`}
         data={sorted}
         numColumns={cols}
         keyExtractor={(v) => v.key}
         ListHeaderComponent={header}
-        columnWrapperStyle={cols > 1 ? { gap: 12, paddingHorizontal: 16 } : undefined}
-        contentContainerStyle={{ paddingBottom: insets.bottom + BOTTOM_SPACE, gap: cols > 1 ? 18 : 0 }}
-        getItemLayout={cols === 1 ? undefined : undefined}
-        initialNumToRender={10}
-        maxToRenderPerBatch={8}
-        windowSize={9}
-        removeClippedSubviews
+        contentContainerStyle={{ paddingBottom: insets.bottom + BOTTOM_SPACE, paddingHorizontal: cols > 1 ? 10 : 0 }}
         ListEmptyComponent={<EmptyState text={emptyText ?? 'Aucune vidéo trouvée sur cet appareil.'} />}
         renderItem={({ item, index }) =>
           cols > 1 ? (
-            <VideoCard video={item} index={index} width={cardW} onPress={onPress} onMore={onMore} />
+            <View style={{ paddingHorizontal: 6, paddingBottom: 18 }}>
+              <VideoCard video={item} index={index} width={cardW} onPress={onPress} onMore={onMore} />
+            </View>
           ) : (
             <VideoRow video={item} index={index} onPress={onPress} onMore={onMore} active={item.key === currentKey} />
           )
@@ -235,7 +232,7 @@ export function VideoFoldersTab() {
   const insets = useSafeAreaInsets();
   const folders = useVideos((s) => s.folders);
   return (
-    <FlatList
+    <FlashList
       data={folders}
       keyExtractor={(f) => f.path}
       contentContainerStyle={{ paddingTop: 10, paddingBottom: insets.bottom + BOTTOM_SPACE }}

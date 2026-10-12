@@ -22,6 +22,7 @@ import { PopupMenu, type MenuItem } from '../components/PopupMenu';
 import { haptic } from '../components/ui';
 import { Buffering, GestureHud, type Hud } from '../components/video/GestureHud';
 import { SeekBar } from '../components/video/SeekBar';
+import { Marquee } from '../components/Marquee';
 import { useVideoThumb } from '../lib/thumbs';
 import { useMedia, type VideoSettings } from '../store/media';
 import { toast, useUI } from '../store/ui';
@@ -217,25 +218,30 @@ export default function VideoPlayerScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Orientation follows the video shape.
+  // Auto-rotate: the screen follows how the phone is held. Off: stays as it is.
   useEffect(() => {
-    if (!Native || !settings.autoRotate || !videoW || !videoH) return;
-    Native.setOrientation(videoW > videoH * 1.05 ? 'landscape' : 'portrait');
-  }, [videoW, videoH, settings.autoRotate, item?.key]);
+    if (!Native) return;
+    Native.setOrientation(settings.autoRotate ? 'sensor' : 'locked');
+  }, [settings.autoRotate]);
 
   // Auto picture-in-picture when leaving the app while playing (Android 12+).
   useEffect(() => {
     Native?.setAutoPip(settings.autoPip && isPlaying, videoW || 16, videoH || 9);
   }, [settings.autoPip, isPlaying, videoW, videoH]);
 
-  // PiP detection: the window shrinks to a small size.
+  // PiP detection: the window shrinks to a small size (checked again once settled).
+  const smallWindow = W < 420 && H < 420;
   useEffect(() => {
     let alive = true;
-    Native?.isInPip().then((p) => alive && setPip(p));
+    const check = () => Native?.isInPip().then((p) => alive && setPip(p || (W < 420 && H < 420)));
+    check();
+    const t1 = setTimeout(check, 350);
     return () => {
       alive = false;
+      clearTimeout(t1);
     };
   }, [W, H]);
+  const inPip = pip || smallWindow;
 
   // Going to background: keep playing (PiP / background audio) or pause.
   useEffect(() => {
@@ -366,7 +372,7 @@ export default function VideoPlayerScreen() {
       brightness.current = level;
       Native?.setBrightness(level);
       if (settings.rememberBrightness) updateVideo({ brightness: level });
-      setHud({ type: 'level', icon: 'sun', value: level, max: 1, label: `${Math.round(level * 100)} %` });
+      setHud({ type: 'level', icon: 'sun', value: level, max: 1, label: `${Math.round(level * 100)}%`, side: 'left' });
     },
     [settings.rememberBrightness, updateVideo]
   );
@@ -383,7 +389,7 @@ export default function VideoPlayerScreen() {
       v.boost = boost;
       Native?.setVolumeBoost(boost);
     }
-    setHud({ type: 'level', icon: 'volume', value: level, max: 2, label: `${Math.round(level * 100)} %`, boost: level > 1 });
+    setHud({ type: 'level', icon: 'volume', value: level, max: 2, label: `${Math.round(level * 100)}%`, boost: level > 1, side: 'right' });
   }, []);
   const endLevel = useCallback(() => {
     if (hudTimer.current) clearTimeout(hudTimer.current);
@@ -454,7 +460,7 @@ export default function VideoPlayerScreen() {
   }, []);
 
   // --- gestures ---
-  const gesturesOn = settings.gestures && !locked && !pip;
+  const gesturesOn = settings.gestures && !locked && !inPip;
   const mode = useSharedValue(0); // 1 scrub, 2 brightness, 3 volume, 4 move picture
   const startLevel = useSharedValue(0);
   const scrubPos = useSharedValue(0);
@@ -476,30 +482,38 @@ export default function VideoPlayerScreen() {
   }, [brightRef, volRef]);
   syncLevelsRef.current = syncLevels;
 
+  // The direction is decided on the first real movement (onStart can report zero
+  // translation), with a bias towards horizontal so seeking is easy to trigger.
   const pan = Gesture.Pan()
     .enabled(gesturesOn)
     .maxPointers(1)
-    .minDistance(14)
-    .onStart((e) => {
+    .minDistance(10)
+    .onStart(() => {
+      mode.value = 0;
       if (zoom.value > 1.05) {
         mode.value = 4;
         txStart.value = tx.value;
         tyStart.value = ty.value;
-        return;
-      }
-      const horizontal = Math.abs(e.translationX) > Math.abs(e.translationY);
-      if (horizontal) {
-        mode.value = 1;
-        scrubPos.value = posSV.value;
-        lastX.value = e.translationX;
-        scheduleOnRN(onScrubBegin);
-      } else {
-        mode.value = e.x < W / 2 ? 2 : 3;
-        startLevel.value = mode.value === 2 ? brightRef.value : volRef.value;
-        lastLevel.value = -1;
       }
     })
     .onUpdate((e) => {
+      if (mode.value === 0) {
+        const ax = Math.abs(e.translationX);
+        const ay = Math.abs(e.translationY);
+        if (ax < 10 && ay < 10) return;
+        if (ax >= ay * 0.75) {
+          mode.value = 1;
+          scrubPos.value = posSV.value;
+          lastX.value = e.translationX;
+          scheduleOnRN(onScrubBegin);
+        } else {
+          const startX = e.x - e.translationX;
+          mode.value = startX < W / 2 ? 2 : 3;
+          startLevel.value = mode.value === 2 ? brightRef.value : volRef.value;
+          lastLevel.value = -1;
+        }
+        return;
+      }
       if (mode.value === 4) {
         const maxX = (W * (zoom.value - 1)) / 2;
         const maxY = (H * (zoom.value - 1)) / 2;
@@ -533,7 +547,7 @@ export default function VideoPlayerScreen() {
         }
       }
     })
-    .onEnd(() => {
+    .onFinalize(() => {
       if (mode.value === 1) scheduleOnRN(onScrubEnd, scrubPos.value);
       else if (mode.value === 2 || mode.value === 3) scheduleOnRN(endLevel);
       mode.value = 0;
@@ -553,7 +567,7 @@ export default function VideoPlayerScreen() {
     });
 
   const pinch = Gesture.Pinch()
-    .enabled(!locked && !pip)
+    .enabled(!locked && !inPip)
     .onStart(() => {
       zoomStart.value = zoom.value;
     })
@@ -571,14 +585,14 @@ export default function VideoPlayerScreen() {
     });
 
   const doubleTap = Gesture.Tap()
-    .enabled(!pip)
+    .enabled(!inPip)
     .numberOfTaps(2)
     .maxDelay(260)
     .onEnd((e, ok) => {
       if (ok) scheduleOnRN(onDoubleTap, e.x);
     });
   const singleTap = Gesture.Tap()
-    .enabled(!pip)
+    .enabled(!inPip)
     .onEnd((e, ok) => {
       if (ok) scheduleOnRN(onSingleTap, e.x);
     });
@@ -637,10 +651,17 @@ export default function VideoPlayerScreen() {
     toast(next.label);
   }, [resizeMode, zoom, tx, ty]);
 
+  // Manual rotation locks the chosen orientation; a long press returns to automatic.
   const rotate = useCallback(() => {
-    updateVideo({ autoRotate: false });
-    Native?.setOrientation(W > H ? 'portrait' : 'landscape');
-  }, [W, H, updateVideo]);
+    const next = W > H ? 'portrait' : 'landscape';
+    Native?.setOrientation(next);
+    toast(next === 'landscape' ? 'Paysage verrouillé — appui long pour l’auto' : 'Portrait verrouillé — appui long pour l’auto');
+  }, [W, H]);
+  const autoRotate = useCallback(() => {
+    updateVideo({ autoRotate: true });
+    Native?.setOrientation('sensor');
+    toast('Rotation automatique');
+  }, [updateVideo]);
 
   const openMenuAt = useCallback((ref: React.RefObject<View | null>, items: MenuItem[], title?: string, align: 'left' | 'right' = 'right') => {
     ref.current?.measureInWindow((x, y, w, h) => setMenu({ x: align === 'right' ? x + w : x, y: y + h, items, title }));
@@ -811,21 +832,19 @@ export default function VideoPlayerScreen() {
 
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#fff' }, flashStyle]} key={flash} />
 
-      {ripple ? <Ripple key={`${ripple.side}`} side={ripple.side} seconds={ripple.seconds} /> : null}
-      {buffering && !error ? <Buffering /> : null}
-      <GestureHud hud={hud} />
+      {ripple && !inPip ? <Ripple key={`${ripple.side}`} side={ripple.side} seconds={ripple.seconds} /> : null}
+      {buffering && !error && !inPip ? <Buffering /> : null}
+      {!inPip ? <GestureHud hud={hud} /> : null}
 
       {/* Controls */}
-      {!pip ? (
+      {!inPip ? (
         <Animated.View style={[StyleSheet.absoluteFill, overlayStyle]} pointerEvents={controls && !locked ? 'box-none' : 'none'}>
           <View style={[styles.topArea, { paddingTop: landscape ? 10 : insets.top + 6, paddingHorizontal: padH }]}>
             <Gradient top />
             <View style={styles.topRow}>
               <Btn icon="chevronLeft" size={28} label="Fermer" onPress={close} />
               <View style={{ flex: 1, marginHorizontal: 6 }}>
-                <Text numberOfLines={landscape ? 1 : 2} style={styles.title}>
-                  {item.title}
-                </Text>
+                <Marquee text={item.title} style={styles.title} />
                 <Text numberOfLines={1} style={styles.subtitle}>
                   {count > 1 ? `${index + 1}/${count} · ` : ''}
                   {infoLine}
@@ -918,7 +937,7 @@ export default function VideoPlayerScreen() {
             />
             <View style={styles.toolsRow}>
               <Btn icon="lock" label="Verrouiller" onPress={() => (setLocked(true), setLockHint(true), toast('Écran verrouillé'))} />
-              <Btn icon="rotate" label="Pivoter" onPress={rotate} />
+              <Btn icon="rotate" label="Pivoter" onPress={rotate} onLongPress={autoRotate} />
               <Btn icon="aspect" label="Format" onPress={cycleResize} />
               <Btn icon="camera" label="Capture" onPress={capture} />
               <Btn icon="loop" label="Boucle A-B" onPress={cycleLoop} active={loopA !== null} />
@@ -931,7 +950,7 @@ export default function VideoPlayerScreen() {
       ) : null}
 
       {/* Lock */}
-      {locked && lockHint && !pip ? (
+      {locked && lockHint && !inPip ? (
         <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(150)} style={[styles.lockWrap, { bottom: insets.bottom + 40 }]}>
           <Pressable
             onPress={() => {

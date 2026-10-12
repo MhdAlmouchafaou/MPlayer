@@ -395,9 +395,11 @@ function IconImpl({ name, size = 24, color = '#000', strokeWidth = 1.7 }: Props)
     case 'rotate':
       body = (
         <>
-          <Rect {...s} x={4.5} y={3.5} width={9} height={15} rx={2.2} />
-          <Path {...s} d="M17 8.5c2.2 1.2 3.4 3.4 3.1 5.9-.3 2.4-2 4.3-4.3 5" />
-          <Path {...s} d="M15.6 21.2l.4-2-1.9-.8" />
+          <Rect {...s} x={8.6} y={4.6} width={6.8} height={14.8} rx={1.8} transform="rotate(-45 12 12)" />
+          <Path {...s} d="M14.6 2.9a9.2 9.2 0 016.5 6.5" />
+          <Path {...s} d="M21.4 6.6l-.3 2.8-2.7-.6" />
+          <Path {...s} d="M9.4 21.1a9.2 9.2 0 01-6.5-6.5" />
+          <Path {...s} d="M2.6 17.4l.3-2.8 2.7.6" />
         </>
       );
       break;
